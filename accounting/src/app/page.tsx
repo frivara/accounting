@@ -1,9 +1,12 @@
-
+import './home.css';
 
 export default function Home() {
   return (
     <main>
-      WIP
+      <header>
+        WIP
+      </header>
+
     </main>
   )
 }
