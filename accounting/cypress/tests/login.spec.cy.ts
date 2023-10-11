@@ -1,7 +1,7 @@
 describe('login page', () => {
   beforeEach(() => {
     // Visit the login page
-    cy.visit('/login');
+    cy.visit('/');
   });
 
 
@@ -17,7 +17,7 @@ describe('login page', () => {
     cy.get('button[type="submit"]').click();
 
     // Verify that the user is still on the login page
-    cy.url().should('eq', '/login');
+    cy.url().should('eq', '/');
 
     // Verify that the user is displayed an error message
     cy.get('.error-message').should('be.visible');
