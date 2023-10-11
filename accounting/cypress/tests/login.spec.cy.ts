@@ -17,7 +17,7 @@ describe('login page', () => {
     cy.get('button[type="submit"]').click();
 
     // Verify that the user is still on the login page
-    cy.url().should('eq', '/');
+    cy.url().should('eq', 'http://localhost:3000/');
 
     // Verify that the user is displayed an error message
     cy.get('.error-message').should('be.visible');
@@ -35,7 +35,10 @@ describe('login page', () => {
     cy.get('button[type="submit"]').click();
 
     // Verify that the user is logged in
-    cy.url().should('eq', '/');
+    cy.url().should('eq', 'http://localhost:3000/');
+
+    // Verify that the user is displayed a successful login message
+    cy.get('.successful-login').should('be.visible');
   });
 
   it('should validate empty fields in the login form', () => {
@@ -43,7 +46,5 @@ describe('login page', () => {
     cy.get('input[name="email"]').should('have.class', 'is-invalid');
     cy.get('input[name="password"]').should('have.class', 'is-invalid');
   });
-
-
 
 })

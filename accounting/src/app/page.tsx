@@ -58,7 +58,7 @@ const LoginPage: React.FC = () => {
         {error && <div data-cy="error-message" className="error-message">{error}</div>}
       </form>
 
-      {isLoggedIn && <p>Login successful!</p>}
+      {isLoggedIn && <p className='successful-login'>Login successful!</p>}
     </div>
   );
 };
