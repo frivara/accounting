@@ -1,66 +1,48 @@
 'use client'
-import React, { useState } from 'react';
-import Link from 'next/link';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [error, setError] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+const HomePage: React.FC = () => {
+    const router = useRouter();
+    const [user, setUser] = useState<string | null>(null);
 
-  const handleLogin = () => {
-    // Clear previous error messages
-    setError(null);
+    useEffect(() => {
+        // Get the logged-in user from the context
+        const user = localStorage.getItem("user");
+        if (user) {
+            setUser(user);
+        } else {
+            // Redirect to the login page if the user is not logged in
+            router.push("/");
+        }
+    }, []);
 
-    // Check against hard-coded credentials
-    if (email === 'admin@email.com' && password === 'password') {
-      // Set login status to true
-      setIsLoggedIn(true);
-      console.log("Logged in!");
-    } else {
-      // Set login status to false
-      setIsLoggedIn(false);
-      // Show error message
-      setError('Invalid email or password');
-    }
-  };
+    const handleLogout = () => {
+        // Remove the logged-in user from the context
+        localStorage.removeItem("user");
+        // Redirect to the login page
+        router.push("/");
+    };
 
-  return (
-    <div>
-      <h1>Login</h1>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleLogin();
-        }}
-      >
-        <input
-          data-cy="email"
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className={error ? 'is-invalid' : ''}
-        />
-        <input
-          data-cy="password"
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={error ? 'is-invalid' : ''}
-        />
-        <button data-cy="submit" type="submit">
-          Login
-        </button>
-        {error && <div data-cy="error-message" className="error-message">{error}</div>}
-      </form>
-
-      {isLoggedIn && <p className='successful-login'>Login successful!</p>}
-    </div>
-  );
+    return (
+        <div>
+            <h1>Homepage</h1>
+            <h2>Welcome, {user}!</h2>
+            <ul>
+                <li>
+                    <Link className="create-fiscal-year-book" href="/fiscal-year-book/new">Create a new fiscal year book</Link>
+                </li>
+                <li>
+                    <Link className="see-earlier-fiscal-years" href="/fiscal-year-book/list">See the earlier fiscal years</Link>
+                </li>
+                <li>
+                    <Link className="see-accounts" href="/accounts">See a list of accounts</Link>
+                </li>
+            </ul>
+            <button onClick={handleLogout}>Log out</button>
+        </div>
+    );
 };
 
-export default LoginPage;
+export default HomePage;
