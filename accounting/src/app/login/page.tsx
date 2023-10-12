@@ -1,12 +1,12 @@
 'use client'
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const LoginPage: React.FC = () => {
+  const router = useRouter();
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
   const handleLogin = () => {
     // Clear previous error messages
@@ -14,12 +14,11 @@ const LoginPage: React.FC = () => {
 
     // Check against hard-coded credentials
     if (email === 'admin@example.com' && password === 'password') {
-      // Set login status to true
-      setIsLoggedIn(true);
-      console.log("Logged in!");
+      localStorage.setItem('user', email);
+      // Redirect to the home page
+      router.push('/');
     } else {
       // Set login status to false
-      setIsLoggedIn(false);
       // Show error message
       setError('Invalid email or password');
     }
@@ -58,7 +57,6 @@ const LoginPage: React.FC = () => {
         {error && <div data-cy="error-message" className="error-message">{error}</div>}
       </form>
 
-      {isLoggedIn && <p className='successful-login'>Login successful!</p>}
     </div>
   );
 };
