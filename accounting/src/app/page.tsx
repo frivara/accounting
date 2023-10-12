@@ -14,7 +14,7 @@ const HomePage: React.FC = () => {
             setUser(user);
         } else {
             // Redirect to the login page if the user is not logged in
-            router.push("/");
+            router.push("/login");
         }
     }, []);
 
@@ -22,7 +22,7 @@ const HomePage: React.FC = () => {
         // Remove the logged-in user from the context
         localStorage.removeItem("user");
         // Redirect to the login page
-        router.push("/");
+        router.push("/login");
     };
 
     return (
@@ -31,13 +31,14 @@ const HomePage: React.FC = () => {
             <h2>Welcome, {user}!</h2>
             <ul>
                 <li>
-                    <Link className="create-fiscal-year-book" href="/fiscal-year-book/new">Create a new fiscal year book</Link>
+                    <Link className="view-fiscal-year" href="/fiscal-year-book">
+                        Handle fiscal years
+                    </Link>
                 </li>
                 <li>
-                    <Link className="see-earlier-fiscal-years" href="/fiscal-year-book/list">See the earlier fiscal years</Link>
-                </li>
-                <li>
-                    <Link className="see-accounts" href="/accounts">See a list of accounts</Link>
+                    <Link className="see-accounts" href="/accounts">
+                        See a list of accounts
+                    </Link>
                 </li>
             </ul>
             <button onClick={handleLogout}>Log out</button>
