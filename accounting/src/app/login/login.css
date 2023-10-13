@@ -1,0 +1,33 @@
+.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 95svh;
+}
+
+.login-form {
+    margin: 0 auto;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #fff;
+    color: #333;
+
+}
+
+.TextField {
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #fff;
+    color: #333;
+}
+
+.Button {
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #fff;
+    color: #333;
+}
+
+.error-message {
+    color: red;
+}

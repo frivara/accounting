@@ -1,6 +1,8 @@
 'use client'
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { TextField, Button } from '@mui/material';
+import "./login.css";
 
 const LoginPage: React.FC = () => {
   const router = useRouter();
@@ -25,15 +27,14 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div>
-      <h1>Login</h1>
-      <form
+    <div className="login-page">
+      <form className="login-form"
         onSubmit={(e) => {
           e.preventDefault();
           handleLogin();
         }}
       >
-        <input
+        <TextField
           data-cy="email"
           type="email"
           name="email"
@@ -42,7 +43,7 @@ const LoginPage: React.FC = () => {
           onChange={(e) => setEmail(e.target.value)}
           className={error ? 'is-invalid' : ''}
         />
-        <input
+        <TextField
           data-cy="password"
           type="password"
           name="password"
@@ -51,9 +52,9 @@ const LoginPage: React.FC = () => {
           onChange={(e) => setPassword(e.target.value)}
           className={error ? 'is-invalid' : ''}
         />
-        <button data-cy="submit" type="submit">
+        <Button data-cy="submit" type="submit">
           Login
-        </button>
+        </Button>
         {error && <div data-cy="error-message" className="error-message">{error}</div>}
       </form>
 
