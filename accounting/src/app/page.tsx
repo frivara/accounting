@@ -28,7 +28,6 @@ const HomePage: React.FC = () => {
 
     return (
         <div>
-            <Navbar />
             <h1>Homepage</h1>
             <h2>Welcome, {user}!</h2>
             <ul>

@@ -1,28 +1,18 @@
-import Link from "next/link";
+// Navbar.tsx
+import React from "react";
+import { AppBar, Toolbar, Typography } from "@mui/material";
+import "./css/navbar.css";
+
 
 const Navbar: React.FC = () => {
     return (
-        <nav className="navbar">
-            <ul>
-                <li>
-                    <Link href="/">Home</Link>
-                </li>
-                <li>
-                    <Link href="/accounts">Accounts</Link>
-                    <ul>
-                        <li>
-                            <Link href="/accounts/new">Create new account</Link>
-                        </li>
-                        <li>
-                            <Link href="/accounts/list">See earlier accounts</Link>
-                        </li>
-                    </ul>
-                </li>
-                <li>
-                    <Link href="/logout">Log out</Link>
-                </li>
-            </ul>
-        </nav>
+        <AppBar position="static" className="navbar">
+            <Toolbar>
+                <Typography variant="h6" component="div">
+                    My Navbar
+                </Typography>
+            </Toolbar>
+        </AppBar>
     );
 };
 
