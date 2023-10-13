@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Navbar from "./components/Navbar";
 
 const HomePage: React.FC = () => {
     const router = useRouter();
@@ -27,6 +28,7 @@ const HomePage: React.FC = () => {
 
     return (
         <div>
+            <Navbar />
             <h1>Homepage</h1>
             <h2>Welcome, {user}!</h2>
             <ul>

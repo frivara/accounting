@@ -46,17 +46,19 @@ const AccountsPage: React.FC = () => {
                     type="text"
                     placeholder="Name"
                     value={name}
+                    id="name"
                     onChange={(e) => setName(e.target.value)}
                 />
                 <select
                     value={accountingPlan}
+                    id="accountingPlan"
                     onChange={(e) => setAccountingPlan(e.target.value)}
                 >
                     <option value="">Select an accounting plan</option>
                     <option value="cashAccounting">Cash accounting</option>
                     <option value="accrualAccounting">Accrual accounting</option>
                 </select>
-                <button type="submit">Create account</button>
+                <button type="submit" id="createAccountButton">Create account</button>
             </form>
 
             <ul className="account-list">
