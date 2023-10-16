@@ -1,15 +1,18 @@
 'use client'
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import app from "../db/firebase";
+
 
 // Disclaimer - I'm using the <any>-tag temporarily since the accounts have not been given a type/interface yet
 
 const AccountsPage: React.FC = () => {
     const router = useRouter();
-
     const [name, setName] = useState("");
     const [accountingPlan, setAccountingPlan] = useState("");
     const [accounts, setAccounts] = useState<any>([]);
+
+
 
     const handleCreateAccount = (e: FormEvent<HTMLFormElement>) => {
         // Prevent the form from reloading
@@ -36,6 +39,10 @@ const AccountsPage: React.FC = () => {
         // Redirect to the account details page which is a WIP
         router.push(`/accounts/${id}`);
     };
+
+
+
+
 
     return (
         <div>
