@@ -16,7 +16,8 @@ export default function RootLayout({
       <head>
         <title>Accounting Web Application</title>
         <meta name="description" content="A website that takes simplicity into account" />
-        <link rel="stylesheet" href="src/app/globals.css" />
+
+        {/* <link rel="stylesheet" href="src/app/styles/globals.css" /> commented this line out for now due to issues with pathfinding*/}
       </head>
       <body className={inter.className}>
         <Navbar />

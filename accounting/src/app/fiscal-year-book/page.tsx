@@ -7,9 +7,6 @@ const NewFiscalYear: React.FC = () => {
             <h1>Fiscal year</h1>
             <ul>
                 <li>
-                    <Link href="/">Home page</Link>
-                </li>
-                <li>
                     <Link href="/fiscal-year-book/new">Create a new fiscal year book</Link>
 
                 </li>
