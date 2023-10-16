@@ -1,5 +1,5 @@
 'use client'
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // Disclaimer - I'm using the <any>-tag temporarily since the accounts have not been given a type/interface yet
@@ -10,6 +10,17 @@ const AccountsPage: React.FC = () => {
     const [name, setName] = useState("");
     const [accountingPlan, setAccountingPlan] = useState("");
     const [accounts, setAccounts] = useState<any>([]);
+
+    useEffect(() => {
+        // Get the logged-in user from the context
+        const user = localStorage.getItem("user");
+        if (user) {
+            setUser(user);
+        } else {
+            // Redirect to the login page if the user is not logged in
+            router.push("/login");
+        }
+    }, []);
 
     const handleCreateAccount = (e: FormEvent<HTMLFormElement>) => {
         // Prevent the form from reloading
@@ -73,3 +84,7 @@ const AccountsPage: React.FC = () => {
 };
 
 export default AccountsPage;
+function setUser(user: string) {
+    throw new Error("Function not implemented.");
+}
+

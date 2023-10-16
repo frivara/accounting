@@ -18,12 +18,7 @@ const HomePage: React.FC = () => {
         }
     }, []);
 
-    const handleLogout = () => {
-        // Remove the logged-in user from the context
-        localStorage.removeItem("user");
-        // Redirect to the login page
-        router.push("/login");
-    };
+
 
     return (
         <div className="homepage">
