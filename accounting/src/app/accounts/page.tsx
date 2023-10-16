@@ -1,7 +1,6 @@
 'use client'
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import app from "../db/firebase";
 
 
 // Disclaimer - I'm using the <any>-tag temporarily since the accounts have not been given a type/interface yet
