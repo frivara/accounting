@@ -1,23 +1,14 @@
 'use client'
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { initializeApp } from 'firebase/app';
-import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { collection, addDoc } from "firebase/firestore";
 
-const firebaseConfig = {
-    apiKey: process.env.API_KEY,
-    authDomain: process.env.AUTH_DOMAIN,
-    projectId: process.env.PROJECT_ID,
-    storageBucket: process.env.STORAGE_BUCKET,
-    messagingSenderId: process.env.MESSAGING_SENDER_ID,
-    appId: process.env.APP_ID,
-    measurementID: process.env.MEASUREMENT_ID
-};
 
-const app = initializeApp(firebaseConfig);
-
-const storage = getStorage();
-
+interface iAccount {
+    id: string,
+    name: string,
+    accountingPlan: string,
+}
 
 // Disclaimer - I'm using the <any>-tag temporarily since the accounts have not been given a type/interface yet
 
@@ -25,12 +16,19 @@ const AccountsPage: React.FC = () => {
     const router = useRouter();
     const [name, setName] = useState("");
     const [accountingPlan, setAccountingPlan] = useState("");
-    const [accounts, setAccounts] = useState<any>([]);
+    const [accounts, setAccounts] = useState<iAccount[]>([]);
 
 
     const handleCreateAccount = async (e: FormEvent<HTMLFormElement>) => {
         // Prevent the form from reloading
         e.preventDefault();
+
+        // Add item to database
+
+        if (name == "" || accountingPlan == "") {
+            console.log("You need to type in a name and choose an accounting plan");
+            return;
+        }
 
         try {
             // Create a new account
@@ -41,8 +39,8 @@ const AccountsPage: React.FC = () => {
                 accountingPlan,
             };
 
-            // Upload the new account to Firebase Storage
-            await uploadAccount(newAccount);
+            // Upload the new account to Firebase Database here
+
 
             // Add the new account to the list of accounts
             setAccounts([...accounts, newAccount]);
@@ -56,10 +54,7 @@ const AccountsPage: React.FC = () => {
     };
 
 
-    const uploadAccount = async (account: any) => {
-        const accountRef = ref(storage, `accounts/${account.id}`);
-        await uploadString(accountRef, JSON.stringify(account));
-    };
+
 
 
     const handleViewAccount = (id: string) => {
@@ -95,6 +90,7 @@ const AccountsPage: React.FC = () => {
                 {accounts.map((account: any) => (
                     <li key={account.id} onClick={() => handleViewAccount(account.id)}>
                         {account.name}
+                        <div>{account.accountingPlan}</div>
                     </li>
                 ))}
             </ul>
