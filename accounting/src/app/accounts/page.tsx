@@ -33,7 +33,6 @@ const AccountsPage: React.FC = () => {
 
         try {
 
-            console.log(process.env.NEXT_PUBLIC_STORAGE_BUCKET);
             // Create a new account
             const newAccount = {
                 // Giving the account a random id using 7 random alphanumerical characters
@@ -41,9 +40,7 @@ const AccountsPage: React.FC = () => {
                 name,
                 accountingPlan,
             };
-            console.log(newAccount);
 
-            console.log("Here!");
             // Upload the new account to Firebase Database here
             await addDoc(collection(db, "account"), {
                 id: newAccount.id,
