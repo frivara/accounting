@@ -1,6 +1,7 @@
+'use client'
 import { useRouter, useSearchParams } from "next/navigation";
 import { collection, getDoc, QuerySnapshot, query, onSnapshot, where } from "firebase/firestore";
-import { db } from "../db/firebase";
+import { db } from "../../db/firebase";
 import { useState, FormEvent, useEffect } from "react";
 
 interface Account {
@@ -17,19 +18,20 @@ const AccountPage: React.FC = () => {
     // Fetch the account data from the database
     useEffect(() => {
         const accountId = searchParams.get("id");
+        console.log("AccountId: " + accountId);
+        console.log("Searchparams: " + searchParams);
 
         if (!accountId) {
             return;
         }
 
-        const accountQuery = query(collection(db, "accounts"), where("id", "==", accountId));
+        const accountQuery = query(collection(db, "accounts"), where("firestoreId", "==", accountId));
         const unsubscribe = onSnapshot(accountQuery, (querySnapshot) => {
             const account = querySnapshot.docs[0];
             if (account) {
                 setAccount({ ...account.data(), id: account.id, name: "", accountingPlan: "" });
             }
         });
-
 
         return () => unsubscribe();
     }, [searchParams]);
