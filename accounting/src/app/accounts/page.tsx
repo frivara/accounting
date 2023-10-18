@@ -1,11 +1,12 @@
 'use client'
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { collection, addDoc, getDoc, QuerySnapshot, query, onSnapshot } from "firebase/firestore";
+import { collection, addDoc, getDoc, QuerySnapshot, query, onSnapshot, where, doc } from "firebase/firestore";
 import { db } from "../db/firebase";
 
 interface Account {
     id: string;
+    firestoreId: string;
     name: string;
     accountingPlan: string;
 }
@@ -15,6 +16,15 @@ const AccountsPage: React.FC = () => {
     const [name, setName] = useState("");
     const [accountingPlan, setAccountingPlan] = useState("");
     const [accounts, setAccounts] = useState<Account[]>([]);
+
+    const handleViewAccount = async (account: Account) => {
+        // Get the ID of the account
+        const id = account.id;
+
+        // Redirect to the account page
+        router.push(`/accounts/${id}`);
+    };
+
 
     const handleCreateAccount = async (e: FormEvent<HTMLFormElement>) => {
         // Prevent the form from reloading
@@ -28,6 +38,7 @@ const AccountsPage: React.FC = () => {
         try {
             const newAccount: Account = {
                 id: Math.random().toString(36).substring(7),
+                firestoreId: Math.random().toString(36).substring(7),
                 name,
                 accountingPlan,
             };
@@ -52,17 +63,17 @@ const AccountsPage: React.FC = () => {
             let itemsArray: any = [];
 
             querySnapshot.forEach((doc) => {
-                itemsArray.push({ ...doc.data(), id: doc.id });
+                itemsArray.push({ ...doc.data(), firestoreId: doc.id });
             });
             setAccounts(itemsArray);
-        })
+        });
 
-    }, [])
+        return () => unsubscribe();
+    }, []);
 
-    const handleViewAccount = (id: string) => {
-        // Redirect to the account details page which is a WIP
-        router.push(`/accounts/${id}`);
-    };
+
+
+
 
     return (
         <div>
@@ -92,9 +103,10 @@ const AccountsPage: React.FC = () => {
 
             <ul className="account-list">
                 {accounts.map((account: Account) => (
-                    <li key={account.id} onClick={() => handleViewAccount(account.id)}>
+                    <li key={account.id} onClick={() => handleViewAccount(account)}>
                         {account.name}
                         <div>{account.accountingPlan}</div>
+                        <div>{account.id}</div>
                     </li>
                 ))}
             </ul>
