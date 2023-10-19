@@ -1,6 +1,6 @@
 'use client'
 import { usePathname } from "next/navigation";
-import { collection, query, onSnapshot, where } from "firebase/firestore";
+import { collection, query, onSnapshot, where, doc } from "firebase/firestore";
 import { db } from "../../db/firebase";
 import { useState, useEffect } from "react";
 
@@ -16,23 +16,33 @@ const AccountPage: React.FC = () => {
     const pathname = usePathname();
 
     // Fetch the account data from the database
-    useEffect(() => {
-        const accountId = pathname.split('/').pop();
 
-        if (!accountId) {
-            return;
-        }
+useEffect(() => {
+  const accountId = pathname.split('/').pop();
+  console.log(accountId);
 
-        const accountQuery = query(collection(db, "accounts"), where("id", "==", accountId));
-        const unsubscribe = onSnapshot(accountQuery, (querySnapshot) => {
-            const account = querySnapshot.docs[0];
-            if (account) {
-                setAccount({ ...account.data(), id: account.id, name: "", accountingPlan: "" });
-            }
-        });
+  if (!accountId) {
+    return;
+  }
 
-        return () => unsubscribe();
-    }, []);
+  const accountRef = doc(db, "accounts", accountId);
+
+  const unsubscribe = onSnapshot(accountRef, (doc) => {
+    if (doc.exists()) {
+      // Add the name and accountingPlan properties to the object
+      const accountData = { name: doc.data().name, accountingPlan: doc.data().accountingPlan, id: doc.id };
+
+      // Set the account state
+      setAccount(accountData);
+    }
+  });
+
+  return () => {
+    unsubscribe();
+  };
+}, []);
+
+
 
     if (!account) {
         return <div>Account not found</div>;

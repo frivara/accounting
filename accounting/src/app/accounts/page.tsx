@@ -19,12 +19,27 @@ const AccountsPage: React.FC = () => {
 
     const handleViewAccount = async (account: Account) => {
         // Get the ID of the account
-        const id = account.id;
+        const id = account.firestoreId;
+
+        // Get the account data
+        const accountData = await getAccountById(id);
+
+        // If the account data is null, the account does not exist
+        if (!accountData) {
+            return;
+        }
 
         // Redirect to the account page
         router.push(`/accounts/${id}`);
     };
 
+
+    const getAccountById = async (id: string) => {
+        const accountDoc = await getDoc(doc(db, "accounts", id));
+        const account = accountDoc.data();
+
+        return account;
+    };
 
     const handleCreateAccount = async (e: FormEvent<HTMLFormElement>) => {
         // Prevent the form from reloading
@@ -38,14 +53,12 @@ const AccountsPage: React.FC = () => {
         try {
             const newAccount: Account = {
                 id: Math.random().toString(36).substring(7),
-                firestoreId: Math.random().toString(36).substring(7),
+                firestoreId: "",
                 name,
                 accountingPlan,
             };
 
             await addDoc(collection(db, "accounts"), newAccount);
-
-            // setAccounts([...accounts, newAccount]);
 
             setName("");
             setAccountingPlan("");
@@ -64,11 +77,15 @@ const AccountsPage: React.FC = () => {
 
             querySnapshot.forEach((doc) => {
                 itemsArray.push({ ...doc.data(), firestoreId: doc.id });
+                console.log(doc.id);
             });
             setAccounts(itemsArray);
         });
 
+
+
         return () => unsubscribe();
+
     }, []);
 
 
@@ -107,6 +124,7 @@ const AccountsPage: React.FC = () => {
                         {account.name}
                         <div>{account.accountingPlan}</div>
                         <div>{account.id}</div>
+                        <div>{account.firestoreId}</div>
                     </li>
                 ))}
             </ul>
