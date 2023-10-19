@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { collection, addDoc, getDoc, QuerySnapshot, query, onSnapshot, where, doc } from "firebase/firestore";
 import { db } from "../db/firebase";
 
-interface Account {
+export interface Account {
     id: string;
     firestoreId: string;
     name: string;

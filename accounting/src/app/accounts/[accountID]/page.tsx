@@ -1,8 +1,8 @@
 'use client'
-import { useRouter, useSearchParams } from "next/navigation";
-import { collection, getDoc, QuerySnapshot, query, onSnapshot, where } from "firebase/firestore";
+import { usePathname } from "next/navigation";
+import { collection, query, onSnapshot, where } from "firebase/firestore";
 import { db } from "../../db/firebase";
-import { useState, FormEvent, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 interface Account {
     id: string;
@@ -11,21 +11,19 @@ interface Account {
 }
 
 const AccountPage: React.FC = () => {
-    const router = useRouter();
-    const searchParams = useSearchParams();
     const [account, setAccount] = useState<Account | null>(null);
+
+    const pathname = usePathname();
 
     // Fetch the account data from the database
     useEffect(() => {
-        const accountId = searchParams.get("id");
-        console.log("AccountId: " + accountId);
-        console.log("Searchparams: " + searchParams);
+        const accountId = pathname.split('/').pop();
 
         if (!accountId) {
             return;
         }
 
-        const accountQuery = query(collection(db, "accounts"), where("firestoreId", "==", accountId));
+        const accountQuery = query(collection(db, "accounts"), where("id", "==", accountId));
         const unsubscribe = onSnapshot(accountQuery, (querySnapshot) => {
             const account = querySnapshot.docs[0];
             if (account) {
@@ -34,7 +32,7 @@ const AccountPage: React.FC = () => {
         });
 
         return () => unsubscribe();
-    }, [searchParams]);
+    }, []);
 
     if (!account) {
         return <div>Account not found</div>;
