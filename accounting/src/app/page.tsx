@@ -26,13 +26,8 @@ const HomePage: React.FC = () => {
             <h2>Welcome, {user}!</h2>
             <ul>
                 <li>
-                    <Link className="view-fiscal-year" href="/fiscal-year-book">
-                        Handle fiscal years
-                    </Link>
-                </li>
-                <li>
                     <Link className="see-accounts" href="/accounts">
-                        See a list of accounts
+                        Accounts
                     </Link>
                 </li>
             </ul>
