@@ -1,8 +1,9 @@
 'use client'
 import { usePathname } from "next/navigation";
-import { collection, query, onSnapshot, where, doc } from "firebase/firestore";
+import { onSnapshot, doc } from "firebase/firestore";
 import { db } from "../../db/firebase";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 interface Account {
     id: string;
@@ -19,7 +20,6 @@ const AccountPage: React.FC = () => {
 
 useEffect(() => {
   const accountId = pathname.split('/').pop();
-  console.log(accountId);
 
   if (!accountId) {
     return;
@@ -54,6 +54,22 @@ useEffect(() => {
 
             <p>Name: {account.name}</p>
             <p>Accounting plan: {account.accountingPlan}</p>
+
+            <div>
+            <h1>Fiscal years</h1>
+            <ul>
+                <li>
+                <Link href={`/accounts/${account.id}/new`}>Create a new fiscal year book</Link>
+
+
+                </li>
+                <li>
+                    <Link href="/fiscal-year-book/list">See the earlier fiscal years</Link>
+
+                </li>
+            </ul>
+
+        </div>
         </div>
     );
 };
