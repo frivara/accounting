@@ -28,7 +28,11 @@ const NewFiscalYear: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const pathname = usePathname();
-    const accountId = pathname.split('/').pop();
+
+    // Here we are using pathname to get the id of the account for which we are creating a new fiscal year
+    const pathSegments = pathname.split('/');
+    const accountId = pathSegments[pathSegments.length - 2];  // This gets us the second to last segment of the url which is the account id we want
+
     
     const handleCreateFiscalYear = async () => {
         if (fiscalYearSpan.start && fiscalYearSpan.end && accountId) {
@@ -62,7 +66,7 @@ const NewFiscalYear: React.FC = () => {
                         type="date"
                         value={fiscalYearSpan.start ? fiscalYearSpan.start.toISOString().split('T')[0] : ''}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFiscalYearSpan(prev => ({...prev, start: new Date(e.target.value)}))}
-                        label=""  // The label is handled by InputLabel
+                        
                     />
                 </FormControl>
                 <FormControl fullWidth margin="normal" variant="outlined">
@@ -72,7 +76,7 @@ const NewFiscalYear: React.FC = () => {
                         type="date"
                         value={fiscalYearSpan.end ? fiscalYearSpan.end.toISOString().split('T')[0] : ''}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFiscalYearSpan(prev => ({...prev, end: new Date(e.target.value)}))}
-                        label=""  // The label is handled by InputLabel
+                        
                     />
                 </FormControl>
             </StyledDatePicker>
