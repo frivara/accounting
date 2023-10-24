@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react';
 import { addDoc, collection } from 'firebase/firestore';
-import { db } from '../../../db/firebase';  // Adjust the import path accordingly
+import { db } from '../../../../db/firebase';  // Adjust the import path accordingly
 import { usePathname } from "next/navigation";
 import { Button, Container, TextField, CircularProgress, Typography, FormControl, InputLabel, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
 import { styled } from '@mui/system';
