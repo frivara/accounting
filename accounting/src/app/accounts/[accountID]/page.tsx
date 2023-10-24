@@ -4,6 +4,7 @@ import { onSnapshot, doc } from "firebase/firestore";
 import { db } from "../../db/firebase";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import FiscalYearsList from './FiscalYearsList';
 
 interface Account {
     id: string;
@@ -68,6 +69,8 @@ useEffect(() => {
 
                 </li>
             </ul>
+
+            <FiscalYearsList />
 
         </div>
         </div>

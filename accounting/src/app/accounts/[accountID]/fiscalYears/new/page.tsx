@@ -5,6 +5,7 @@ import { db } from '../../../../db/firebase';  // Adjust the import path accordi
 import { usePathname } from "next/navigation";
 import { Button, Container, TextField, CircularProgress, Typography, FormControl, InputLabel, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
 import { styled } from '@mui/system';
+import router from 'next/router';
 
 const StyledContainer = styled(Container)({
     padding: '32px',
@@ -45,6 +46,9 @@ const NewFiscalYear: React.FC = () => {
             try {
                 const fiscalYearRef = await addDoc(collection(db, "fiscalYears"), newFiscalYearData);
                 console.log("Document written with ID: ", fiscalYearRef.id);
+    
+                // Redirect to the newly created fiscal year page
+                router.push(`/accounts/${accountId}/fiscalYears/${fiscalYearRef.id}`);
             } catch (error) {
                 setError("Error creating fiscal year: " + (error as Error).message);
             } finally {
@@ -52,6 +56,7 @@ const NewFiscalYear: React.FC = () => {
             }
         }
     };
+    
 
 
     return (
