@@ -32,7 +32,7 @@ const NewFiscalYear: React.FC = () => {
 
     // Here we are using pathname to get the id of the account for which we are creating a new fiscal year
     const pathSegments = pathname.split('/');
-    const accountId = pathSegments[pathSegments.length - 2];  // This gets us the second to last segment of the url which is the account id we want
+    const accountId = pathSegments[pathSegments.length - 3];  // This gets us the second to last segment of the url which is the account id we want
 
     
     const handleCreateFiscalYear = async () => {

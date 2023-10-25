@@ -58,21 +58,9 @@ useEffect(() => {
 
             <div>
             <h1>Fiscal years</h1>
-            <ul>
-                <li>
-                <Link href={`/accounts/${account.id}/fiscalYears/new`}>Create a new fiscal year book</Link>
-
-
-                </li>
-                <li>
-                    <Link href={`/accounts/${account.id}/fiscalYears/list`}>See the earlier fiscal years</Link>
-
-                </li>
-            </ul>
-
+            <Link href={`/accounts/${account.id}/fiscalYears/new`}>Create a new fiscal year book</Link>
             <FiscalYearsList />
-
-        </div>
+            </div>
         </div>
     );
 };

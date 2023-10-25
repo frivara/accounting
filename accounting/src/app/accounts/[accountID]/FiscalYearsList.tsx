@@ -47,6 +47,9 @@ const FiscalYearsList: React.FC = () => {
                     endDate: data.fiscalYearSpan?.end.toDate().toLocaleDateString()
                 });
             });
+            console.log(querySnapshot);
+            console.log(itemsArray);
+
 
             setFiscalYears(itemsArray);
         });
@@ -56,7 +59,7 @@ const FiscalYearsList: React.FC = () => {
 
     return (
         <div>
-            <h1>Fiscal Years</h1>
+            <h1>List of fiscal years</h1>
             <ul className="fiscal-year-list">
                 {fiscalYears.map((fiscalYear: FiscalYear) => (
                     <li key={fiscalYear.id} onClick={() => handleViewFiscalYear(fiscalYear)}>
