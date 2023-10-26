@@ -43,7 +43,7 @@ const NewTransactionPage: React.FC = () => {
             });
 
             
-            router.push(`/accounts/${accountId}/fiscalYears/${fiscalYearId}`);
+            router.push(`/accounting/${accountId}/fiscalYears/${fiscalYearId}`);
         } catch (error) {
             console.error(error);
         }

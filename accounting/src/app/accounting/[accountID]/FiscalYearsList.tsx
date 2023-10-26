@@ -22,7 +22,7 @@ const FiscalYearsList: React.FC = () => {
 
     const handleViewFiscalYear = (fiscalYear: FiscalYear) => {
         const id = fiscalYear.firestoreId;
-        router.push(`/accounts/${accountId}/fiscalYears/${id}`);
+        router.push(`/accounting/${accountId}/fiscalYears/${id}`);
     };
 
     useEffect(() => {

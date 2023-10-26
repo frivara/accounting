@@ -48,7 +48,7 @@ const NewFiscalYear: React.FC = () => {
                 console.log("Document written with ID: ", fiscalYearRef.id);
     
                 // Redirect to the newly created fiscal year page
-                router.push(`/accounts/${accountId}/fiscalYears/${fiscalYearRef.id}`);
+                router.push(`/accounting/${accountId}/fiscalYears/${fiscalYearRef.id}`);
             } catch (error) {
                 setError("Error creating fiscal year: " + (error as Error).message);
             } finally {

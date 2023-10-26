@@ -59,7 +59,7 @@ const TransactionPage: React.FC = () => {
             ) : (
                 <p>Loading...</p>
             )}
-            <Link href={`/accounts/${accountId}/fiscalYears/${fiscalYearId}`} passHref>
+            <Link href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}`} passHref>
                 <Button variant="contained" color="primary">
                     Back to Fiscal Year
                 </Button>

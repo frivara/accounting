@@ -30,7 +30,7 @@ const AccountsPage: React.FC = () => {
         }
 
         // Redirect to the account page
-        router.push(`/accounts/${id}`);
+        router.push(`/accounting/${id}`);
     };
 
 

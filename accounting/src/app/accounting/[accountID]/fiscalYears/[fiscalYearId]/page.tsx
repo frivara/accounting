@@ -90,7 +90,7 @@ const FiscalYearPage: React.FC = () => {
 
     const handleTransactionClick = (transactionId: string) => {
         const accountId: string = pathname.split('/')[2];
-        router.push(`/accounts/${accountId}/fiscalYears/${fiscalYearId}/transactions/${transactionId}`);
+        router.push(`/accounting/${accountId}/fiscalYears/${fiscalYearId}/transactions/${transactionId}`);
     };
 
     if (!fiscalYear) {
@@ -103,14 +103,14 @@ const FiscalYearPage: React.FC = () => {
             <p>Name: {fiscalYear.name}</p>
             <p>Start date: {fiscalYear.startDate}</p>
             <p>End date: {fiscalYear.endDate}</p>
-            <Link href={`/accounts/${accountId}/fiscalYears/${fiscalYearId}/transactions/new`}>
+            <Link href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}/transactions/new`}>
                 <button>Create New Transaction</button>
             </Link>
             <div className="transactions-list">
                 {transactions.map(transaction => (
                     <div key={transaction.id} className="transaction-item">
                         <Link 
-                            href={`/accounts/${accountId}/fiscalYears/${fiscalYearId}/transactions/${transaction.id}`} 
+                            href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}/transactions/${transaction.id}`} 
                             passHref
                         >
                                 {transaction.description} - ${transaction.amount} on {transaction.date}
