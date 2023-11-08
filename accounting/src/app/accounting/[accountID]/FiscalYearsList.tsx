@@ -1,4 +1,4 @@
-// 'use client'
+'use client'
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { collection, query, onSnapshot, where } from "firebase/firestore";
@@ -61,11 +61,12 @@ const FiscalYearsList: React.FC = () => {
         <div>
             <h1>List of fiscal years</h1>
             <ul className="fiscal-year-list">
-                {fiscalYears.map((fiscalYear: FiscalYear) => (
-                    <li key={fiscalYear.id} onClick={() => handleViewFiscalYear(fiscalYear)}>
-                        {fiscalYear.startDate} - {fiscalYear.endDate}
-                    </li>
-                ))}
+            {fiscalYears.map((fiscalYear: FiscalYear) => (
+  <li key={fiscalYear.firestoreId} onClick={() => handleViewFiscalYear(fiscalYear)}>
+    {fiscalYear.startDate} - {fiscalYear.endDate}
+  </li>
+))}
+
             </ul>
         </div>
     );

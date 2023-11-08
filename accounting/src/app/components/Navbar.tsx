@@ -23,7 +23,7 @@ const Navbar: React.FC = () => {
                     Accounting Web Application
                 </Typography>
                 <Link href="/">Home</Link>
-                <Link href="/accounts">Accounts</Link>
+                <Link href="/accounting">Accounting</Link>
                 <button id="logout-button" onClick={handleLogout}>Log out</button>
 
             </Toolbar>

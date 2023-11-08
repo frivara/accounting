@@ -26,8 +26,8 @@ const HomePage: React.FC = () => {
             <h2>Welcome, {user}!</h2>
             <ul>
                 <li>
-                    <Link className="see-accounts" href="/accounts">
-                        Accounts
+                    <Link className="see-accounts" href="/accounting">
+                        Organisations
                     </Link>
                 </li>
             </ul>
