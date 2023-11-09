@@ -77,6 +77,23 @@ const NewTransactionPage: React.FC = () => {
     setTotalCredits(credits);
   }, [entries]);
 
+  const handleBalanceEntry = (index: number) => {
+    const entryToBalance = entries[index];
+    // Ensure accountId and counterAccountId are defined before creating the mirrored entry
+    if (!entryToBalance.accountId || !entryToBalance.counterAccountId) {
+      console.error('Account IDs must be defined.');
+      return;
+    }
+    const mirroredEntry: Entry = {
+      ...entryToBalance,
+      type: entryToBalance.type === 'debit' ? 'credit' : 'debit',
+      accountId: entryToBalance.counterAccountId, // We're sure this is a string
+      counterAccountId: entryToBalance.accountId, // We're sure this is a string
+    };
+  
+    setEntries([...entries, mirroredEntry]);
+  };
+
   const renderEntryRow = (entry: Entry, index: number) => (
     <TableRow key={index}>
       <TableCell>
@@ -120,8 +137,23 @@ const NewTransactionPage: React.FC = () => {
           size="small"
         />
       </TableCell>
+      <TableCell>
+      <Button
+        onClick={() => handleBalanceEntry(index)}
+        variant="outlined"
+        disabled={isTransactionBalanced()} // This function should check if the transaction is already balanced
+      >
+        Balance Entry
+      </Button>
+    </TableCell>
     </TableRow>
   );
+
+  const isTransactionBalanced = () => {
+    const totalDebits = entries.filter(e => e.type === 'debit').reduce((acc, curr) => acc + curr.amount, 0);
+    const totalCredits = entries.filter(e => e.type === 'credit').reduce((acc, curr) => acc + curr.amount, 0);
+    return totalDebits === totalCredits;
+  };
 
   return (
     <div>
