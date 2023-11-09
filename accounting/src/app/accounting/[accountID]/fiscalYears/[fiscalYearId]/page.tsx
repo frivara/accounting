@@ -73,16 +73,32 @@ const FiscalYearPage: React.FC = () => {
         const unsubscribe = onSnapshot(transactionsQuery, (querySnapshot) => {
             const fetchedTransactions: Transaction[] = [];
             querySnapshot.forEach((doc) => {
-                const data = doc.data();
+              const data = doc.data();
+        
+              // Check if the transaction has 'entries' (new structure)
+              if (data.entries && data.entries.length > 0) {
+                // You may want to aggregate the amounts and descriptions from the entries
+                const totalAmount = data.entries.reduce((sum: any, entry: { amount: any; }) => sum + entry.amount, 0);
+                const descriptions = data.entries.map((entry: { description: any; }) => entry.description).join(', ');
+        
                 fetchedTransactions.push({
-                    id: doc.id,
-                    description: data.description,
-                    amount: data.amount,
-                    date: data.date,
+                  id: doc.id,
+                  description: descriptions,
+                  amount: totalAmount,
+                  date: data.date, // You may need to format this date
                 });
+              } else {
+                // Old structure
+                fetchedTransactions.push({
+                  id: doc.id,
+                  description: data.description,
+                  amount: data.amount,
+                  date: data.date, // You may need to format this date
+                });
+              }
             });
             setTransactions(fetchedTransactions);
-        });
+          });
 
         return () => unsubscribe();
     }, [fiscalYearId]);
