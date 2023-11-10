@@ -120,11 +120,10 @@ const AccountsPage: React.FC = () => {
 
             <ul className="account-list">
                 {accounts.map((account: Account) => (
-                    <li key={account.id} onClick={() => handleViewAccount(account)}>
+                    <li key={account.id} onClick={() => handleViewAccount(account)} className="account-list-item">
                         {account.name}
                         <div>{account.accountingPlan}</div>
-                        <div>{account.id}</div>
-                        <div>{account.firestoreId}</div>
+
                     </li>
                 ))}
             </ul>

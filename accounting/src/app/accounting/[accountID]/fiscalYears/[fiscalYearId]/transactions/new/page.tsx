@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react';
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { doc, setDoc, collection } from "firebase/firestore";
 import { db } from "../../../../../../db/firebase";
 import { Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
@@ -17,6 +17,7 @@ interface Transaction {
   id: string;
   entries: Entry[];
   date: string;
+  fiscalYearId: string;
 }
 
 const NewTransactionPage: React.FC = () => {
@@ -24,6 +25,12 @@ const NewTransactionPage: React.FC = () => {
   const [isBalanced, setIsBalanced] = useState(false);
   const [totalDebits, setTotalDebits] = useState(0);
   const [totalCredits, setTotalCredits] = useState(0);
+  const pathname = usePathname();
+    const pathSegments = pathname.split('/');
+    const accountId = pathSegments[pathSegments.length - 5];
+    const fiscalYearId = pathSegments[pathSegments.length - 3];
+    console.log(fiscalYearId);
+
   const [newEntry, setNewEntry] = useState<Entry>({
     accountId: '',
     type: 'debit',
@@ -50,22 +57,26 @@ const NewTransactionPage: React.FC = () => {
       alert('The sum of debits and credits must be equal.');
       return;
     }
-    
+  
+    // Assuming fiscalYearId is obtained from URL or state
+  
     try {
       const newTransactionRef = doc(collection(db, 'transactions'));
       const newTransaction: Transaction = {
         id: newTransactionRef.id,
         entries,
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
+        fiscalYearId // include the fiscalYearId in the transaction data
       };
       await setDoc(newTransactionRef, newTransaction);
       alert('Transaction saved successfully!');
-      router.push(`/path/to/success/page`);
+      router.push(`/accounting/${accountId}/fiscalYears/${fiscalYearId}/`);
     } catch (error) {
       console.error('Error saving transaction:', error);
       alert('Failed to save transaction. Please try again.');
     }
   };
+  
 
   const handleNewEntryChange = (field: keyof Entry, value: any) => {
     setNewEntry(prev => ({ ...prev, [field]: value }));
