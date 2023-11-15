@@ -1,6 +1,6 @@
 'use client'
 import { usePathname } from "next/navigation";
-import { onSnapshot, doc, collection, query, where } from "firebase/firestore";
+import { onSnapshot, doc, collection, query, where, updateDoc, getDocs, setDoc, writeBatch } from "firebase/firestore";
 import { db } from "../../../../db/firebase";
 import { useState, useEffect } from "react";
 import Link from 'next/link';  
@@ -23,6 +23,10 @@ interface Transaction {
     amount: number;
     description: string;
   }
+
+  interface FinalBalances {
+    [accountId: string]: number; 
+  }
   
 
 const FiscalYearPage: React.FC = () => {
@@ -33,6 +37,7 @@ const FiscalYearPage: React.FC = () => {
     const fiscalYearId: string = pathSegments[pathSegments.length - 1]; 
     const accountId: string = pathSegments[pathSegments.length - 3];
     const [expandedTransactionId, setExpandedTransactionId] = useState<string | null>(null);
+    const [isYearClosed, setIsYearClosed] = useState<boolean>(false);
     
     // Fetch the fiscal year data from the database
     useEffect(() => {
@@ -105,6 +110,64 @@ const FiscalYearPage: React.FC = () => {
         return <div>Fiscal year not found</div>;
     }
 
+    
+    
+    async function calculateFinalBalances(fiscalYearId: string): Promise<FinalBalances> {
+      const balancesSnapshot = await getDocs(collection(db, 'fiscalYears', fiscalYearId, 'balances'));
+      const finalBalances: FinalBalances = {};
+      balancesSnapshot.forEach((doc) => {
+        const data = doc.data();
+        finalBalances[doc.id] = data.balance; // Assuming 'balance' is a number.
+      });
+      return finalBalances;
+    }
+    
+    async function createNewFiscalYear(previousFiscalYearId: string, finalBalances: FinalBalances, newYearData: any): Promise<string> {
+      const newFiscalYearRef = doc(collection(db, 'fiscalYears'));
+      await setDoc(newFiscalYearRef, newYearData); // Set up the new fiscal year data
+    
+      // Initialize the balances for the new fiscal year
+      const balancesBatch = writeBatch(db);
+      Object.entries(finalBalances).forEach(([accountId, balance]) => {
+        const balanceRef = doc(newFiscalYearRef, 'balances', accountId);
+        balancesBatch.set(balanceRef, { balance }); // Set the opening balance
+      });
+      await balancesBatch.commit();
+      return newFiscalYearRef.id; // Return the ID of the new fiscal year
+    }
+
+   
+    
+    
+
+    const closeFiscalYear = async () => {
+      // Confirm with the user
+      if (!window.confirm('Are you sure you want to close this fiscal year?')) {
+        return;
+      }
+  
+      try {
+        // Here you would calculate the final balances
+        const finalBalances = await calculateFinalBalances(fiscalYearId);
+  
+        // Create a new fiscal year document with the carried-over balances
+        const newFiscalYearData = { /* ... new fiscal year data ... */ };
+        const newFiscalYearId = await createNewFiscalYear(fiscalYearId, finalBalances, newFiscalYearData);
+  
+        // Mark the current fiscal year as closed
+        await updateDoc(doc(db, 'fiscalYears', fiscalYearId), { isClosed: true });
+  
+        // Update the state to reflect the closed status
+        setIsYearClosed(true);
+  
+        console.log(`New fiscal year created with ID: ${newFiscalYearId}`);
+        alert('The fiscal year has been closed and a new year has been created.');
+      } catch (error) {
+        console.error('Error closing fiscal year:', error);
+        alert('Failed to close the fiscal year. Please try again.');
+      }
+    };
+
     return (
         <div>
           <h1>Fiscal Year</h1>
@@ -137,6 +200,9 @@ const FiscalYearPage: React.FC = () => {
           </Accordion>
         ))}
       </div>
+      {!isYearClosed && (
+        <button onClick={closeFiscalYear}>Close Fiscal Year</button>
+      )}
     </div>
   );
 };
