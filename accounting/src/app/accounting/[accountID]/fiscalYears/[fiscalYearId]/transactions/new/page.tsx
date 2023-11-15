@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { doc, setDoc, collection } from "firebase/firestore";
 import { db } from "../../../../../../db/firebase";
 import { Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import { runTransaction, increment } from "firebase/firestore"; 
 
 interface Entry {
   accountId: string;
@@ -49,26 +50,45 @@ const NewTransactionPage: React.FC = () => {
     setNewEntry({ accountId: '', type: 'debit', amount: 0, description: '' });
   };
 
+
+
+  const handleNewEntryChange = (field: keyof Entry, value: any) => {
+    setNewEntry(prev => ({ ...prev, [field]: value }));
+  };
+
   const validateAndSaveTransaction = async () => {
-    const totalDebits = entries.filter(e => e.type === 'debit').reduce((acc, curr) => acc + curr.amount, 0);
-    const totalCredits = entries.filter(e => e.type === 'credit').reduce((acc, curr) => acc + curr.amount, 0);
-    
+    const totalDebits = entries.reduce((acc, entry) => entry.type === 'debit' ? acc + entry.amount : acc, 0);
+    const totalCredits = entries.reduce((acc, entry) => entry.type === 'credit' ? acc + entry.amount : acc, 0);
+
     if (totalDebits !== totalCredits) {
       alert('The sum of debits and credits must be equal.');
       return;
     }
-  
-    // Assuming fiscalYearId is obtained from URL or state
-  
+
     try {
-      const newTransactionRef = doc(collection(db, 'transactions'));
-      const newTransaction: Transaction = {
-        id: newTransactionRef.id,
-        entries,
-        date: new Date().toISOString(),
-        fiscalYearId // include the fiscalYearId in the transaction data
-      };
-      await setDoc(newTransactionRef, newTransaction);
+      await runTransaction(db, async (transaction) => {
+        const newTransactionRef = doc(collection(db, 'transactions'));
+  
+        // Construct the new transaction object
+        const newTransaction: Transaction = {
+          id: newTransactionRef.id,
+          entries,
+          date: new Date().toISOString(),
+          fiscalYearId
+        };
+  
+        // Set the new transaction in the database
+        transaction.set(newTransactionRef, newTransaction);
+  
+        // Update each account balance involved in the new transaction
+        entries.forEach((entry) => {
+          const accountRef = doc(db, 'fiscalYears', fiscalYearId, 'balances', entry.accountId);
+          transaction.set(accountRef, {
+            balance: increment(entry.type === 'debit' ? entry.amount : -entry.amount)
+          }, { merge: true });
+        });
+      });
+  
       alert('Transaction saved successfully!');
       router.push(`/accounting/${accountId}/fiscalYears/${fiscalYearId}/`);
     } catch (error) {
@@ -76,11 +96,8 @@ const NewTransactionPage: React.FC = () => {
       alert('Failed to save transaction. Please try again.');
     }
   };
-  
 
-  const handleNewEntryChange = (field: keyof Entry, value: any) => {
-    setNewEntry(prev => ({ ...prev, [field]: value }));
-  };
+  
 
   useEffect(() => {
     const debits = entries.filter(e => e.type === 'debit').reduce((acc, curr) => acc + curr.amount, 0);
