@@ -49,19 +49,22 @@ const FiscalYearPage: React.FC = () => {
         const fiscalYearRef = doc(db, "fiscalYears", fiscalYearId);
     
         const unsubscribe = onSnapshot(fiscalYearRef, (doc) => {
-            if (doc.exists()) {
-                const data = doc.data();
+          if (doc.exists()) {
+            const data = doc.data();
         
-                const fiscalYearData = {
-                    id: doc.id,
-                    name: data?.name || '',
-                    startDate: data?.fiscalYearSpan?.start?.toDate().toLocaleDateString() || '',
-                    endDate: data?.fiscalYearSpan?.end?.toDate().toLocaleDateString() || ''
-                };
+            const fiscalYearData = {
+              id: doc.id,
+              name: data?.name || '',
+              startDate: data?.fiscalYearSpan?.start?.toDate().toLocaleDateString() || '',
+              endDate: data?.fiscalYearSpan?.end?.toDate().toLocaleDateString() || '',
+              isClosed: data?.isClosed || false // Add this line
+            };
         
-                setFiscalYear(fiscalYearData);
-            }
+            setFiscalYear(fiscalYearData);
+            setIsYearClosed(data?.isClosed || false); // Add this line
+          }
         });
+        
 
         
     
@@ -174,9 +177,11 @@ const FiscalYearPage: React.FC = () => {
           <p>Name: {fiscalYear?.name}</p>
           <p>Start date: {fiscalYear?.startDate}</p>
           <p>End date: {fiscalYear?.endDate}</p>
-          <Link href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}/transactions/new`}>
-            <button>Create New Transaction</button>
-          </Link>
+          {!isYearClosed && (
+        <Link href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}/transactions/new`}>
+          <button>Create New Transaction</button>
+        </Link>
+      )}
           <div className="transactions-list">
         {transactions.map(transaction => (
           <Accordion 
