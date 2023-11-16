@@ -125,19 +125,7 @@ const FiscalYearPage: React.FC = () => {
       return finalBalances;
     }
     
-    async function createNewFiscalYear(previousFiscalYearId: string, finalBalances: FinalBalances, newYearData: any): Promise<string> {
-      const newFiscalYearRef = doc(collection(db, 'fiscalYears'));
-      await setDoc(newFiscalYearRef, newYearData); // Set up the new fiscal year data
-    
-      // Initialize the balances for the new fiscal year
-      const balancesBatch = writeBatch(db);
-      Object.entries(finalBalances).forEach(([accountId, balance]) => {
-        const balanceRef = doc(newFiscalYearRef, 'balances', accountId);
-        balancesBatch.set(balanceRef, { balance }); // Set the opening balance
-      });
-      await balancesBatch.commit();
-      return newFiscalYearRef.id; // Return the ID of the new fiscal year
-    }
+  
 
    
     
@@ -155,7 +143,6 @@ const FiscalYearPage: React.FC = () => {
   
         // Create a new fiscal year document with the carried-over balances
         const newFiscalYearData = { /* ... new fiscal year data ... */ };
-        const newFiscalYearId = await createNewFiscalYear(fiscalYearId, finalBalances, newFiscalYearData);
   
         // Mark the current fiscal year as closed
         await updateDoc(doc(db, 'fiscalYears', fiscalYearId), { isClosed: true });
@@ -163,7 +150,6 @@ const FiscalYearPage: React.FC = () => {
         // Update the state to reflect the closed status
         setIsYearClosed(true);
   
-        console.log(`New fiscal year created with ID: ${newFiscalYearId}`);
         alert('The fiscal year has been closed and a new year has been created.');
       } catch (error) {
         console.error('Error closing fiscal year:', error);
