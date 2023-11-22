@@ -27,6 +27,7 @@ import { styled } from "@mui/system";
 
 const StyledContainer = styled(Container)({
   padding: "32px",
+  marginLeft: "15vw", // Adjust this value to match your navbar's height
 });
 
 const StyledDatePicker = styled("div")({
@@ -48,7 +49,11 @@ const NewFiscalYear: React.FC = () => {
     end: Date | null;
   }>({ start: null, end: null });
   const [error, setError] = useState<string | null>(null);
-
+  const [newAccount, setNewAccount] = useState({
+    accountCode: "",
+    accountName: "",
+    balance: 0,
+  });
   const [startBalances, setStartBalances] = useState<any[]>([]); // New state for fetched start balances
   const [loading, setLoading] = useState(false);
   const pathname = usePathname();
@@ -56,7 +61,35 @@ const NewFiscalYear: React.FC = () => {
 
   // Here we are using pathname to get the id of the account for which we are creating a new fiscal year
   const pathSegments = pathname.split("/");
-  const accountId = pathSegments[pathSegments.length - 3]; // This gets us the second to last segment of the url which is the account id we want
+  const organisationId = pathSegments[pathSegments.length - 3]; // This gets us the second to last segment of the url which is the account id we want
+
+  const handleNewAccountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewAccount((prevAccount) => ({
+      ...prevAccount,
+      [name]: name === "balance" ? parseFloat(value) : value,
+    }));
+  };
+
+  useEffect(() => {
+    console.log("Startbalances: " + startBalances);
+  }, [startBalances]);
+
+  const handleAddAccount = () => {
+    // Create a new balance entry with a nested structure
+    const balanceToAdd = {
+      balance: {
+        accountCode: newAccount.accountCode,
+        balance: newAccount.balance, // This should be a number
+      },
+    };
+
+    // Add the new balance entry to the startBalances array
+    setStartBalances((prevBalances) => [...prevBalances, balanceToAdd]);
+
+    // Reset the new account input form
+    setNewAccount({ accountCode: "", accountName: "", balance: 0 });
+  };
 
   useEffect(() => {
     // Function to fetch data.
@@ -89,13 +122,14 @@ const NewFiscalYear: React.FC = () => {
       }
     };
 
-    if (accountId) {
+    if (organisationId) {
       fetchData();
     }
-  }, [accountId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organisationId]);
 
   const handleCreateFiscalYear = async () => {
-    if (fiscalYearSpan.start && fiscalYearSpan.end && accountId) {
+    if (fiscalYearSpan.start && fiscalYearSpan.end && organisationId) {
       setLoading(true);
       try {
         // Fetch the final balances from the last closed fiscal year
@@ -112,7 +146,7 @@ const NewFiscalYear: React.FC = () => {
 
         // Prepare the new fiscal year data
         const newFiscalYearData = {
-          accountId,
+          accountId: organisationId,
           fiscalYearSpan,
           balances: startingBalances,
           isClosed: false, // Initialize as not closed
@@ -134,12 +168,12 @@ const NewFiscalYear: React.FC = () => {
           )
         );
 
-        router.push(`/accounting/${accountId}/`);
+        router.push(`/accounting/${organisationId}/`);
       } catch (error) {
         setError("Error creating fiscal year: " + (error as Error).message);
       } finally {
         setLoading(false);
-        router.push(`/accounting/${accountId}/`);
+        router.push(`/accounting/${organisationId}/`);
       }
     }
   };
@@ -149,7 +183,7 @@ const NewFiscalYear: React.FC = () => {
       // Query to get the last closed fiscal year
       const fiscalYearsQuery = query(
         collection(db, "fiscalYears"),
-        where("accountId", "==", accountId), // Make sure to filter by accountId
+        where("accountId", "==", organisationId), // Make sure to filter by accountId
         where("isClosed", "==", true),
         orderBy("fiscalYearSpan.end", "desc"), // Adjust to the correct field
         limit(1)
@@ -167,12 +201,11 @@ const NewFiscalYear: React.FC = () => {
         const balancesSnapshot = await getDocs(balancesCollectionRef);
 
         if (!balancesSnapshot.empty) {
-          // Map over the documents in the balances subcollection
           return balancesSnapshot.docs.map((doc) => {
             const data = doc.data();
             return {
-              accountCode: doc.id, // Assuming the document ID is the account code
-              balance: data.balance, // Replace with the actual field name for balance
+              accountCode: doc.id, // Make sure this is correct
+              balance: data.balance, // Make sure data.balance is correct
             };
           });
         } else {
@@ -201,6 +234,8 @@ const NewFiscalYear: React.FC = () => {
       setLoading(false);
     }
   };
+
+  console.log("Start Balances:", startBalances);
 
   return (
     <StyledContainer>
@@ -254,18 +289,35 @@ const NewFiscalYear: React.FC = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {startBalances.map((balance, index) => (
+          {startBalances.map((balanceEntry, index) => (
             <TableRow key={index}>
-              <TableCell>{balance.balance.accountCode}</TableCell>
-              <TableCell>
-                {typeof balance.balance === "number"
-                  ? balance.balance
-                  : balance.balance.balance}
-              </TableCell>
+              <TableCell>{balanceEntry.balance.accountCode}</TableCell>
+              <TableCell>{balanceEntry.balance.balance}</TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+      <Typography variant="h6">Input new account details</Typography>
+      <TextField
+        label="Account Code"
+        name="accountCode"
+        value={newAccount.accountCode}
+        onChange={handleNewAccountChange}
+      />
+      <TextField
+        label="Account Name"
+        name="accountName"
+        value={newAccount.accountName}
+        onChange={handleNewAccountChange}
+      />
+      <TextField
+        label="Balance"
+        name="balance"
+        type="number"
+        value={newAccount.balance}
+        onChange={handleNewAccountChange}
+      />
+      <Button onClick={handleAddAccount}>Add Account</Button>
       <Button onClick={refreshBalances} disabled={loading}>
         Refresh Balances
       </Button>

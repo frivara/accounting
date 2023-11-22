@@ -25,8 +25,8 @@ interface Account {
   accountingPlan: string;
 }
 
-const AccountPage: React.FC = () => {
-  const [account, setAccount] = useState<Account | null>(null);
+const OrganisationPage: React.FC = () => {
+  const [organisation, setOrganisation] = useState<Account | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -46,7 +46,7 @@ const AccountPage: React.FC = () => {
           accountingPlan: doc.data().accountingPlan,
           id: doc.id,
         };
-        setAccount(accountData);
+        setOrganisation(accountData);
       }
     });
 
@@ -55,7 +55,7 @@ const AccountPage: React.FC = () => {
     };
   }, [pathname]);
 
-  if (!account) {
+  if (!organisation) {
     return (
       <Container>
         <Typography>Account not found</Typography>
@@ -93,15 +93,15 @@ const AccountPage: React.FC = () => {
             component="div"
             sx={{ textAlign: "center", mb: 2, mt: 1 }}
           >
-            {account ? account.name : "Loading..."}
+            {organisation ? organisation.name : "Loading..."}
           </Typography>
 
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <Card sx={{ p: 2 }}>
-                <Typography variant="h5">{account?.name}</Typography>
+                <Typography variant="h5">{organisation?.name}</Typography>
                 <Typography variant="body1">
-                  Accounting plan: {account?.accountingPlan}
+                  Accounting plan: {organisation?.accountingPlan}
                 </Typography>
               </Card>
             </Grid>
@@ -115,7 +115,7 @@ const AccountPage: React.FC = () => {
                   color="primary"
                   startIcon={<AddCircleOutlineIcon />}
                   component={Link}
-                  href={`/accounting/${account?.id}/fiscalYears/new`}
+                  href={`/accounting/${organisation?.id}/fiscalYears/new`}
                   sx={{ mt: 2 }}
                 >
                   Create a new fiscal year book
@@ -130,4 +130,4 @@ const AccountPage: React.FC = () => {
   );
 };
 
-export default AccountPage;
+export default OrganisationPage;
