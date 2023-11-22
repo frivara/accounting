@@ -133,22 +133,19 @@ const NewFiscalYear: React.FC = () => {
       setLoading(true);
       try {
         // Fetch the final balances from the last closed fiscal year
-        const startingBalances = await fetchLastClosedYearBalances();
+        const fetchedBalances = await fetchLastClosedYearBalances();
 
-        console.log("Starting balances: ", startingBalances);
-        console.log(
-          "Formatted starting balances: ",
-          Object.entries(startingBalances).map(([accountCode, balance]) => ({
-            accountCode,
-            balance,
-          }))
-        );
+        // Combine fetched balances with manually added balances
+        const combinedBalances = [...fetchedBalances, ...startBalances];
+
+        // Log combined balances to see if they're correct
+        console.log("Combined balances: ", combinedBalances);
 
         // Prepare the new fiscal year data
         const newFiscalYearData = {
           accountId: organisationId,
           fiscalYearSpan,
-          balances: startingBalances,
+          balances: combinedBalances,
           isClosed: false, // Initialize as not closed
         };
 
@@ -159,21 +156,12 @@ const NewFiscalYear: React.FC = () => {
         );
         console.log("Document written with ID: ", fiscalYearRef.id);
 
-        setStartBalances(
-          Object.entries(startingBalances).map(
-            ([accountCode, balanceData]) => ({
-              accountCode,
-              balance: (balanceData as BalanceData).balance,
-            })
-          )
-        );
-
+        // Navigate to the next page or show success message
         router.push(`/accounting/${organisationId}/`);
       } catch (error) {
         setError("Error creating fiscal year: " + (error as Error).message);
       } finally {
         setLoading(false);
-        router.push(`/accounting/${organisationId}/`);
       }
     }
   };

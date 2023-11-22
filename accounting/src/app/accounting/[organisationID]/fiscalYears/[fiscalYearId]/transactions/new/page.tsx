@@ -13,6 +13,8 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Container,
+  styled,
 } from "@mui/material";
 import { runTransaction, increment } from "firebase/firestore";
 
@@ -250,8 +252,13 @@ const NewTransactionPage: React.FC = () => {
     return totalDebits === totalCredits;
   };
 
+  const StyledContainer = styled(Container)({
+    padding: "32px",
+    marginLeft: "14vw", // Adjust this value to match your navbar's height
+  });
+
   return (
-    <div>
+    <StyledContainer>
       <h1>New Transaction</h1>
       <div>
         <p>Total Debits: {totalDebits}</p>
@@ -284,7 +291,7 @@ const NewTransactionPage: React.FC = () => {
       >
         Save Transaction
       </Button>
-    </div>
+    </StyledContainer>
   );
 };
 
