@@ -10,7 +10,7 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "../../../../db/firebase"; // Adjust the import path accordingly
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Button,
   Container,
@@ -24,7 +24,6 @@ import {
   TableRow,
 } from "@mui/material";
 import { styled } from "@mui/system";
-import router from "next/router";
 
 const StyledContainer = styled(Container)({
   padding: "32px",
@@ -53,6 +52,7 @@ const NewFiscalYear: React.FC = () => {
   const [startBalances, setStartBalances] = useState<any[]>([]); // New state for fetched start balances
   const [loading, setLoading] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   // Here we are using pathname to get the id of the account for which we are creating a new fiscal year
   const pathSegments = pathname.split("/");
