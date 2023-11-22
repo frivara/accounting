@@ -17,7 +17,6 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import { usePathname, useRouter } from "next/navigation";
-import FiscalYearPage from "./fiscalYears/[fiscalYearId]/page";
 import FiscalYearsList from "./FiscalYearsList";
 
 interface Account {
@@ -80,45 +79,52 @@ const AccountPage: React.FC = () => {
         Navigation items
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <AppBar position="fixed" color="default">
-          <Toolbar>
-            <Button startIcon={<ArrowBackIcon />} onClick={() => router.back()}>
-              Back
-            </Button>
-            <Typography variant="h6" noWrap component="div">
-              Account
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        <Toolbar />
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Card sx={{ p: 2 }}>
-              <Typography variant="h5">{account?.name}</Typography>
-              <Typography variant="body1">
-                Accounting plan: {account?.accountingPlan}
-              </Typography>
-            </Card>
+        <Box sx={{ flexGrow: 1, pt: 3 }}>
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={() => router.back()}
+            sx={{ position: "absolute", top: 16, left: `calc(240px + 16px)` }}
+          >
+            Back
+          </Button>
+          <Typography
+            variant="h6"
+            noWrap
+            component="div"
+            sx={{ textAlign: "center", mb: 2, mt: 1 }}
+          >
+            {account ? account.name : "Loading..."}
+          </Typography>
+
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Card sx={{ p: 2 }}>
+                <Typography variant="h5">{account?.name}</Typography>
+                <Typography variant="body1">
+                  Accounting plan: {account?.accountingPlan}
+                </Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={12}>
+              <Card sx={{ p: 2 }}>
+                <Typography variant="h5" component="h2">
+                  Fiscal years
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<AddCircleOutlineIcon />}
+                  component={Link}
+                  href={`/accounting/${account?.id}/fiscalYears/new`}
+                  sx={{ mt: 2 }}
+                >
+                  Create a new fiscal year book
+                </Button>
+              </Card>
+              <FiscalYearsList />
+            </Grid>
           </Grid>
-          <Grid item xs={12}>
-            <Card sx={{ p: 2 }}>
-              <Typography variant="h5" component="h2">
-                Fiscal years
-              </Typography>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<AddCircleOutlineIcon />}
-                component={Link}
-                href={`/accounting/${account?.id}/fiscalYears/new`}
-                sx={{ mt: 2 }}
-              >
-                Create a new fiscal year book
-              </Button>
-            </Card>
-            <FiscalYearsList />
-          </Grid>
-        </Grid>
+        </Box>
       </Box>
     </Box>
   );
