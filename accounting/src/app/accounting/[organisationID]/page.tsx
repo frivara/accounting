@@ -18,15 +18,10 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import { usePathname, useRouter } from "next/navigation";
 import FiscalYearsList from "./FiscalYearsList";
-
-interface Account {
-  id: string;
-  name: string;
-  accountingPlan: string;
-}
+import { AccountDetails } from "@/app/helpers/interfaces";
 
 const OrganisationPage: React.FC = () => {
-  const [organisation, setOrganisation] = useState<Account | null>(null);
+  const [organisation, setOrganisation] = useState<AccountDetails | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 

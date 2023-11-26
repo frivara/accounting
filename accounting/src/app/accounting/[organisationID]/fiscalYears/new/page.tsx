@@ -38,11 +38,6 @@ const StyledButton = styled(Button)({
   margin: "16px 0",
 });
 
-interface BalanceData {
-  accountCode: string;
-  balance: number;
-}
-
 const NewFiscalYear: React.FC = () => {
   const [fiscalYearSpan, setFiscalYearSpan] = useState<{
     start: Date | null;
