@@ -17,6 +17,8 @@ import {
   styled,
 } from "@mui/material";
 import { runTransaction, increment } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "../../../../../../db/firebase"; // Adjust this import path to where your Firebase storage is initialized
 
 interface Entry {
   accountId: string;
@@ -31,6 +33,7 @@ interface Transaction {
   entries: Entry[];
   date: string;
   fiscalYearId: string;
+  proofFileURL: string;
 }
 
 const NewTransactionPage: React.FC = () => {
@@ -42,6 +45,8 @@ const NewTransactionPage: React.FC = () => {
   const pathSegments = pathname.split("/");
   const accountId = pathSegments[pathSegments.length - 5];
   const fiscalYearId = pathSegments[pathSegments.length - 3];
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofFileName, setProofFileName] = useState<string | null>(null);
 
   const [newEntry, setNewEntry] = useState<Entry>({
     accountId: "",
@@ -67,7 +72,53 @@ const NewTransactionPage: React.FC = () => {
     setNewEntry((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files ? event.target.files[0] : null;
+    if (file) {
+      console.log("File found!");
+      setProofFile(file);
+      setProofFileName(file.name); // Update the state with the file name
+    } else {
+      setProofFileName(null); // Reset the file name if no file is selected
+    }
+  };
+
+  const uploadFileAndGetURL = async (file: File | null): Promise<string> => {
+    if (!file) {
+      throw new Error("No file selected.");
+    }
+
+    // Create a storage reference
+    const fileRef = ref(storage, `proofs/${file.name}`);
+
+    // Continue with file upload
+    await uploadBytes(fileRef, file);
+    return getDownloadURL(fileRef);
+  };
+
   const validateAndSaveTransaction = async () => {
+    let proofFileURL = "";
+
+    // If a file has been selected, upload it and get the URL
+    if (proofFile) {
+      try {
+        proofFileURL = await uploadFileAndGetURL(proofFile);
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        alert("Failed to upload file. Please try again.");
+        return; // Stop the transaction from saving if file upload fails
+      }
+    } else {
+      // If no file is selected, you might want to warn the user but still allow the transaction to be saved.
+      if (
+        !confirm(
+          "Are you sure you want to save the transaction without a proof file?"
+        )
+      ) {
+        return; // Stop the transaction if the user does not confirm
+      }
+    }
+
     const totalDebits = entries.reduce(
       (acc, entry) => (entry.type === "debit" ? acc + entry.amount : acc),
       0
@@ -92,6 +143,7 @@ const NewTransactionPage: React.FC = () => {
           entries,
           date: new Date().toISOString(),
           fiscalYearId,
+          proofFileURL, // Use the proofFileURL here, it will be an empty string if no file was uploaded
         };
 
         // Set the new transaction in the database
@@ -274,6 +326,18 @@ const NewTransactionPage: React.FC = () => {
               <TableCell>Amount</TableCell>
               <TableCell>Description</TableCell>
             </TableRow>
+            <div>
+              <input
+                type="file"
+                onChange={handleFileChange}
+                accept=".pdf,image/*" // Accept only images and PDF
+              />
+              {proofFileName ? (
+                <p>File selected: {proofFileName}</p>
+              ) : (
+                <p>No file selected</p>
+              )}
+            </div>
           </TableHead>
           <TableBody>
             {entries.map((entry, index) => renderEntryRow(entry, index))}

@@ -66,17 +66,32 @@ const ChartOfAccountsPage = () => {
   };
 
   const handleAddAccount = () => {
-    setAccounts((prev) => [...prev, newAccount]);
-    setNewAccount({ code: "", name: "" });
+    if (newAccount.code !== "" || newAccount.name !== "") {
+      setAccounts((prev) => [...prev, newAccount]);
+      setNewAccount({ code: "", name: "" }); // Reset new account fields
+    }
   };
 
   const handleSaveTemplate = async () => {
+    // Log data to be saved
+    console.log("Saving Template:", templateName, accounts);
+
+    // Validate accounts to ensure no undefined values
+    const validAccounts = accounts.filter(
+      (account) => account.code && account.name
+    );
+
     try {
       await addDoc(collection(db, "chartOfAccountsTemplates"), {
         templateName,
-        accounts,
+        accounts: validAccounts,
       });
       alert("Template saved successfully!");
+
+      // Reset the form fields after successful save
+      setAccounts([]); // Clear the accounts list
+      setTemplateName(""); // Clear the template name
+      setNewAccount({ code: "", name: "" }); // Reset new account fields
     } catch (error) {
       console.error("Error saving template:", error);
       alert("Failed to save template. Please try again.");
@@ -86,7 +101,13 @@ const ChartOfAccountsPage = () => {
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files[0]) {
-      Papa.parse(files[0], {
+      const file = files[0];
+
+      // Extract file name without extension
+      const fileName = file.name.split(".").slice(0, -1).join(".");
+      setTemplateName(fileName); // Set the file name as template name
+
+      Papa.parse(file, {
         header: true,
         complete: (result) => {
           console.log("Parsed CSV:", result.data);
@@ -97,10 +118,15 @@ const ChartOfAccountsPage = () => {
   };
 
   const processCsvData = (data: any[]) => {
-    const accountsFromCsv = data.map((row: { [x: string]: any }) => ({
-      code: row["Account Code"], // Adjust based on our CSV column names, these might be changed later
-      name: row["Account Name"],
-    }));
+    const accountsFromCsv = data
+      .filter(
+        (row: { [x: string]: any }) =>
+          row["Account Code"] && row["Account Name"]
+      ) // Add this filter to remove empty rows
+      .map((row: { [x: string]: any }) => ({
+        code: row["Account Code"],
+        name: row["Account Name"],
+      }));
 
     setAccounts(accountsFromCsv);
   };
