@@ -1,8 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation"; // Make sure you are importing useRouter from 'next/router'
 import { collection, query, onSnapshot, where } from "firebase/firestore";
-import { db } from "../../db/firebase";
+import { db } from "../db/firebase";
+import {
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  ListItemIcon,
+} from "@mui/material";
+import EventNoteIcon from "@mui/icons-material/EventNote";
+import React from "react";
 
 export interface FiscalYear {
   id: string;
@@ -55,18 +64,27 @@ const FiscalYearsList: React.FC = () => {
   }, [accountId]);
 
   return (
-    <div>
-      <h1>List of fiscal years</h1>
-      <ul className="fiscal-year-list">
-        {fiscalYears.map((fiscalYear: FiscalYear) => (
-          <li
-            key={fiscalYear.firestoreId}
-            onClick={() => handleViewFiscalYear(fiscalYear)}
-          >
-            {fiscalYear.startDate} - {fiscalYear.endDate}
-          </li>
+    <div style={{ margin: "1rem" }}>
+      <h1 style={{ marginBottom: "0.5rem" }}>List of fiscal years</h1>
+      <List component="nav" aria-label="fiscal years">
+        {fiscalYears.map((fiscalYear: FiscalYear, index) => (
+          <React.Fragment key={fiscalYear.firestoreId}>
+            <ListItem
+              button
+              onClick={() => handleViewFiscalYear(fiscalYear)}
+              sx={{ "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" } }}
+            >
+              <ListItemIcon>
+                <EventNoteIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary={`${fiscalYear.startDate} - ${fiscalYear.endDate}`}
+              />
+            </ListItem>
+            {index < fiscalYears.length - 1 && <Divider />}
+          </React.Fragment>
         ))}
-      </ul>
+      </List>
     </div>
   );
 };

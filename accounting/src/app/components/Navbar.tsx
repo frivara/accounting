@@ -1,33 +1,87 @@
 "use client";
 import React from "react";
-import { AppBar, Toolbar, Typography } from "@mui/material";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Stack,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+} from "@mui/material";
+import { useRouter, usePathname } from "next/navigation";
+import LogoutIcon from "@mui/icons-material/Logout";
+
+const drawerWidth = 240;
 
 const Navbar: React.FC = () => {
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = () => {
-    // Remove the logged-in user from the context
     localStorage.removeItem("user");
-    // Redirect to the login page
     router.push("/login");
   };
 
+  const menuItems = [
+    { text: "Home", path: "/" },
+    { text: "Bookkeeping", path: "/accounting" },
+    { text: "Chart of Accounts", path: "/accounting/chartofaccounts" },
+  ];
+
   return (
-    <AppBar position="static">
-      <Toolbar className="navbar">
-        <Typography variant="h6" component="div">
-          Accounting Web Application
-        </Typography>
-        <Link href="/">Home</Link>
-        <Link href="/accounting">Accounting</Link>
-        <Link href="/accounting/chartofaccounts">Chart of Accounts</Link>
-        <button id="logout-button" onClick={handleLogout}>
-          Log out
-        </button>
-      </Toolbar>
-    </AppBar>
+    <Drawer
+      sx={{
+        width: drawerWidth,
+        flexShrink: 0,
+        "& .MuiDrawer-paper": {
+          width: drawerWidth,
+          boxSizing: "border-box",
+          backgroundColor: "#333",
+          color: "white",
+        },
+      }}
+      variant="permanent"
+      anchor="left"
+    >
+      <Typography variant="h6" sx={{ padding: 2 }}>
+        Accounting Web Application
+      </Typography>
+      <List>
+        {menuItems.map((item, index) => (
+          <ListItem
+            button
+            key={item.text}
+            selected={pathname === item.path}
+            onClick={() => router.push(item.path)}
+            sx={{
+              "&.Mui-selected": {
+                textDecoration: "underline",
+              },
+              "&.MuiListItem-button:hover": {
+                backgroundColor: "rgba(255, 255, 255, 0.08)", // Slight hover effect
+              },
+            }}
+          >
+            <ListItemText primary={item.text} />
+          </ListItem>
+        ))}
+      </List>
+      <IconButton
+        edge="end"
+        aria-label="logout"
+        onClick={handleLogout}
+        sx={{
+          color: "white",
+          margin: 1,
+        }}
+      >
+        <LogoutIcon />
+      </IconButton>
+    </Drawer>
   );
 };
 

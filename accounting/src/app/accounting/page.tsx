@@ -1,17 +1,33 @@
 "use client";
-import { FormEvent, useEffect, useState } from "react";
+import React, { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   collection,
   addDoc,
   getDoc,
-  QuerySnapshot,
   query,
   onSnapshot,
-  where,
   doc,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../db/firebase";
+import {
+  TextField,
+  Button,
+  Select,
+  MenuItem,
+  List,
+  ListItem,
+  ListItemText,
+  Typography,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 export interface Account {
   id: string;
@@ -25,6 +41,8 @@ const OrganisationsPage: React.FC = () => {
   const [name, setName] = useState("");
   const [accountingPlan, setAccountingPlan] = useState("");
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
 
   const handleViewAccount = async (account: Account) => {
     // Get the ID of the account
@@ -75,6 +93,23 @@ const OrganisationsPage: React.FC = () => {
     }
   };
 
+  const openDeleteDialog = (accountId: string) => {
+    setAccountToDelete(accountId);
+    setOpenDialog(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (accountToDelete) {
+      await deleteDoc(doc(db, "accounts", accountToDelete));
+      // Refresh the list or handle the UI update as needed
+      closeDeleteDialog();
+    }
+  };
+
   // Read items from database
 
   useEffect(() => {
@@ -95,42 +130,97 @@ const OrganisationsPage: React.FC = () => {
 
   return (
     <div>
-      <h1>Organisations</h1>
-
-      <form onSubmit={handleCreateAccount}>
-        <input
-          type="text"
-          placeholder="Name"
-          value={name}
-          id="name"
-          onChange={(e) => setName(e.target.value)}
-        />
-        <select
-          value={accountingPlan}
-          id="accountingPlan"
-          onChange={(e) => setAccountingPlan(e.target.value)}
-        >
-          <option value="">Select an accounting plan</option>
-          <option value="cashAccounting">Cash accounting</option>
-          <option value="accrualAccounting">Accrual accounting</option>
-        </select>
-        <button type="submit" id="createAccountButton">
-          Create organisation
-        </button>
-      </form>
-
-      <ul className="account-list">
+      <Typography variant="h4" gutterBottom>
+        My organisations
+      </Typography>
+      <List>
         {accounts.map((account: Account) => (
-          <li
+          <ListItem
             key={account.id}
-            onClick={() => handleViewAccount(account)}
-            className="account-list-item"
+            onClick={() => handleViewAccount(account)} // Make the list item clickable
+            sx={{
+              cursor: "pointer", // Change mouse pointer on hover
+              "&:hover": {
+                backgroundColor: "rgba(0, 0, 0, 0.04)",
+              },
+            }}
+            secondaryAction={
+              <IconButton
+                edge="end"
+                aria-label="delete"
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent ListItem onClick from firing
+                  openDeleteDialog(account.firestoreId);
+                }}
+              >
+                <DeleteIcon />
+              </IconButton>
+            }
           >
-            {account.name}
-            <div>{account.accountingPlan}</div>
-          </li>
+            <ListItemText
+              primary={account.name}
+              secondary={account.accountingPlan}
+            />
+          </ListItem>
         ))}
-      </ul>
+      </List>
+
+      <Typography variant="h5" gutterBottom>
+        Create a new organisation
+      </Typography>
+      <form onSubmit={handleCreateAccount}>
+        <TextField
+          label="Enter name of organisation"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          margin="normal"
+          fullWidth
+        />
+
+        <Select
+          value={accountingPlan}
+          onChange={(e) => setAccountingPlan(e.target.value as string)}
+          displayEmpty
+          fullWidth
+          margin="none"
+        >
+          <MenuItem value="">
+            <em>Select an accounting plan</em>
+          </MenuItem>
+          <MenuItem value="cashAccounting">Cash accounting</MenuItem>
+          <MenuItem value="accrualAccounting">Accrual accounting</MenuItem>
+        </Select>
+
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          style={{ marginTop: 20 }}
+        >
+          Create organisation
+        </Button>
+      </form>
+      <Dialog
+        open={openDialog}
+        onClose={closeDeleteDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">{"Delete Account"}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to delete this account?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteAccount} color="primary" autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

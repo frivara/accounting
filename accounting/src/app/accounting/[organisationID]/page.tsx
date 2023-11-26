@@ -17,7 +17,7 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import { usePathname, useRouter } from "next/navigation";
-import FiscalYearsList from "./FiscalYearsList";
+import FiscalYearsList from "../../components/FiscalYearsList";
 import { AccountDetails } from "@/app/helpers/interfaces";
 
 const OrganisationPage: React.FC = () => {
@@ -26,13 +26,13 @@ const OrganisationPage: React.FC = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const accountId = pathname.split("/").pop();
+    const organisationId = pathname.split("/").pop();
 
-    if (!accountId) {
+    if (!organisationId) {
       return;
     }
 
-    const accountRef = doc(db, "accounts", accountId);
+    const accountRef = doc(db, "accounts", organisationId);
 
     const unsubscribe = onSnapshot(accountRef, (doc) => {
       if (doc.exists()) {
@@ -83,7 +83,7 @@ const OrganisationPage: React.FC = () => {
             Back
           </Button>
           <Typography
-            variant="h6"
+            variant="h4"
             noWrap
             component="div"
             sx={{ textAlign: "center", mb: 2, mt: 1 }}
