@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../db/firebase"; // Adjust the import path accordingly
+import { Autocomplete, TextField } from "@mui/material";
 
-const AccountCodeSearch = ({ fiscalYearId }: any) => {
+const AccountCodeSearch = ({
+  fiscalYearId,
+  currentAccountId,
+  onSelectAccount,
+}: any) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [accounts, setAccounts] = useState([]);
   const [filteredAccounts, setFilteredAccounts] = useState([]);
@@ -37,27 +42,25 @@ const AccountCodeSearch = ({ fiscalYearId }: any) => {
     }
   }, [searchTerm, accounts]);
 
+  const selectedAccount: any =
+    accounts.find((account: any) => account.code === currentAccountId) || null;
+
   return (
-    <div>
-      <input
-        type="text"
-        placeholder="Search Account Codes"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
-      {filteredAccounts.length > 0 && (
-        <div>
-          {/* Display results in a list or a table */}
-          <ul>
-            {filteredAccounts.map((account: any, index) => (
-              <li key={index}>
-                {account.code} - {account.name}
-              </li>
-            ))}
-          </ul>
-        </div>
+    <Autocomplete
+      value={selectedAccount}
+      options={filteredAccounts}
+      getOptionLabel={(option) => `${option.code} - ${option.name}`}
+      style={{ width: 300 }}
+      renderInput={(params) => (
+        <TextField {...params} label="Account Code" variant="outlined" />
       )}
-    </div>
+      onInputChange={(event, newInputValue) => {
+        setSearchTerm(newInputValue);
+      }}
+      onChange={(event, newValue) => {
+        onSelectAccount(newValue || { code: "", name: "" });
+      }}
+    />
   );
 };
 

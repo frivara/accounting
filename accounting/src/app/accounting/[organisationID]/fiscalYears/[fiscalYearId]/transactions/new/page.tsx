@@ -20,6 +20,7 @@ import { runTransaction, increment } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../../../../../../db/firebase"; // Adjust this import path to where your Firebase storage is initialized
 import AccountCodeSearch from "@/app/components/AccountCodeSearch";
+import Autocomplete from "@mui/material/Autocomplete";
 
 interface Entry {
   accountId: string;
@@ -66,14 +67,23 @@ const NewTransactionPage: React.FC = () => {
       return;
     }
     setEntries((prevEntries) => [...prevEntries, newEntry]);
-    setNewEntry({ accountId: "", type: "debit", amount: 0, description: "" });
+    setNewEntry({
+      accountId: "",
+      counterAccountId: "",
+      type: "debit",
+      amount: 0,
+      description: "",
+    });
   };
 
-  const handleNewEntryChange = (field: keyof Entry, value: any) => {
-    setNewEntry((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const handleNewEntryChange = (
+    index: number,
+    field: keyof Entry,
+    value: any
+  ) => {
+    const updatedEntries = [...entries];
+    updatedEntries[index] = { ...updatedEntries[index], [field]: value };
+    setEntries(updatedEntries);
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -239,26 +249,38 @@ const NewTransactionPage: React.FC = () => {
   const renderEntryRow = (entry: Entry, index: number) => (
     <TableRow key={index}>
       <TableCell>
-        <TextField
-          value={entry.accountId}
-          onChange={(e) => handleNewEntryChange("accountId", e.target.value)}
-          size="small"
+        <AccountCodeSearch
+          fiscalYearId={fiscalYearId}
+          currentAccountId={entry.accountId}
+          onSelectAccount={(selectedAccount: { code: any }) => {
+            const updatedEntries = [...entries];
+            updatedEntries[index] = {
+              ...updatedEntries[index],
+              accountId: selectedAccount.code,
+            };
+            setEntries(updatedEntries);
+          }}
         />
       </TableCell>
       <TableCell>
-        <TextField
-          value={entry.counterAccountId}
-          onChange={(e) =>
-            handleNewEntryChange("counterAccountId", e.target.value)
-          }
-          size="small"
+        <AccountCodeSearch
+          fiscalYearId={fiscalYearId}
+          currentAccountId={entry.counterAccountId}
+          onSelectAccount={(selectedAccount: { code: any }) => {
+            const updatedEntries = [...entries];
+            updatedEntries[index] = {
+              ...updatedEntries[index],
+              counterAccountId: selectedAccount.code,
+            };
+            setEntries(updatedEntries);
+          }}
         />
       </TableCell>
       <TableCell>
         <TextField
           select
           value={entry.type}
-          onChange={(e) => handleNewEntryChange("type", e.target.value)}
+          onChange={(e) => handleNewEntryChange(index, "type", e.target.value)}
           SelectProps={{ native: true }}
           size="small"
         >
@@ -271,7 +293,11 @@ const NewTransactionPage: React.FC = () => {
           type="number"
           value={entry.amount}
           onChange={(e) =>
-            handleNewEntryChange("amount", parseFloat(e.target.value) || 0)
+            handleNewEntryChange(
+              index,
+              "amount",
+              parseFloat(e.target.value) || 0
+            )
           }
           size="small"
         />
@@ -279,7 +305,9 @@ const NewTransactionPage: React.FC = () => {
       <TableCell>
         <TextField
           value={entry.description}
-          onChange={(e) => handleNewEntryChange("description", e.target.value)}
+          onChange={(e) =>
+            handleNewEntryChange(index, "description", e.target.value)
+          }
           size="small"
         />
       </TableCell>

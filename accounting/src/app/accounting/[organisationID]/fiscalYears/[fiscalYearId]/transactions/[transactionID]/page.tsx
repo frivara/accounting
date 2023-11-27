@@ -19,6 +19,7 @@ import Link from "next/link";
 
 interface Entry {
   accountId: string;
+  accountName?: string;
   counterAccountId?: string;
   type: "debit" | "credit";
   amount: number;
@@ -29,7 +30,12 @@ interface Transaction {
   id: string;
   entries: Entry[];
   date: string;
-  proofFileURL?: string; // Optional since it might not exist for all transactions
+  proofFileURL?: string; // Optional since an uploaded file might not exist for all transactions
+}
+
+interface CoaAccount {
+  code: string; // Unique identifier for the account, usually a numerical code
+  name: string; // Descriptive name of the account
 }
 
 const TransactionPage: React.FC = () => {
@@ -39,6 +45,7 @@ const TransactionPage: React.FC = () => {
   const transactionId = pathSegments[pathSegments.length - 1];
   const fiscalYearId = pathSegments[pathSegments.length - 3];
   const accountId = pathSegments[pathSegments.length - 5];
+  const [coa, setCoa] = useState<CoaAccount[]>([]);
 
   useEffect(() => {
     if (!transactionId || typeof transactionId !== "string") {
