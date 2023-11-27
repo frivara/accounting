@@ -4,8 +4,6 @@ import { onSnapshot, doc } from "firebase/firestore";
 import { db } from "../../db/firebase";
 import Link from "next/link";
 import {
-  AppBar,
-  Toolbar,
   Grid,
   Card,
   Button,
@@ -77,7 +75,7 @@ const OrganisationPage: React.FC = () => {
         <Box sx={{ flexGrow: 1, pt: 3 }}>
           <Button
             startIcon={<ArrowBackIcon />}
-            onClick={() => router.back()}
+            onClick={() => router.push(`/accounting/`)}
             sx={{ position: "absolute", top: 16, left: `calc(240px + 16px)` }}
           >
             Back

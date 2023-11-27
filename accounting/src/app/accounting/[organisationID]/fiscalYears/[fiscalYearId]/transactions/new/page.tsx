@@ -19,6 +19,7 @@ import {
 import { runTransaction, increment } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../../../../../../db/firebase"; // Adjust this import path to where your Firebase storage is initialized
+import AccountCodeSearch from "@/app/components/AccountCodeSearch";
 
 interface Entry {
   accountId: string;
@@ -69,7 +70,10 @@ const NewTransactionPage: React.FC = () => {
   };
 
   const handleNewEntryChange = (field: keyof Entry, value: any) => {
-    setNewEntry((prev) => ({ ...prev, [field]: value }));
+    setNewEntry((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {

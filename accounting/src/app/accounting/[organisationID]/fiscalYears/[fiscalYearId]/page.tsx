@@ -1,5 +1,5 @@
 "use client";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   onSnapshot,
   doc,
@@ -8,8 +8,6 @@ import {
   where,
   updateDoc,
   getDocs,
-  setDoc,
-  writeBatch,
 } from "firebase/firestore";
 import { db } from "../../../../db/firebase";
 import { useState, useEffect } from "react";
@@ -18,6 +16,8 @@ import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import ExpandMoreIcon from "@mui/material/Icon";
+import { Button } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 interface Transaction {
   id: string;
@@ -41,14 +41,16 @@ interface FinalBalances {
 const FiscalYearPage: React.FC = () => {
   const [fiscalYear, setFiscalYear] = useState<any>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const pathname = usePathname();
-  const pathSegments = pathname.split("/");
-  const fiscalYearId: string = pathSegments[pathSegments.length - 1];
-  const accountId: string = pathSegments[pathSegments.length - 3];
   const [expandedTransactionId, setExpandedTransactionId] = useState<
     string | null
   >(null);
   const [isYearClosed, setIsYearClosed] = useState<boolean>(false);
+
+  const pathname = usePathname();
+  const pathSegments = pathname.split("/");
+  const fiscalYearId: string = pathSegments[pathSegments.length - 1];
+  const accountId: string = pathSegments[pathSegments.length - 3];
+  const router = useRouter();
 
   // Fetch the fiscal year data from the database
   useEffect(() => {
@@ -167,8 +169,14 @@ const FiscalYearPage: React.FC = () => {
 
   return (
     <div>
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => router.push(`/accounting/${accountId}/`)}
+        sx={{ position: "absolute", top: 16, left: `calc(240px + 16px)` }}
+      >
+        Back
+      </Button>
       <h1>Fiscal Year</h1>
-      <p>Name: {fiscalYear?.name}</p>
       <p>Start date: {fiscalYear?.startDate}</p>
       <p>End date: {fiscalYear?.endDate}</p>
       {!isYearClosed && (
@@ -201,6 +209,14 @@ const FiscalYearPage: React.FC = () => {
                   <div>Counter Account ID: {entry.counterAccountId}</div>
                 </div>
               ))}
+              <Link
+                href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}/transactions/${transaction.id}`}
+                passHref
+              >
+                <Button variant="contained" color="primary">
+                  View Transaction
+                </Button>
+              </Link>
             </AccordionDetails>
           </Accordion>
         ))}
