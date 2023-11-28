@@ -7,6 +7,7 @@ const AccountCodeSearch = ({
   fiscalYearId,
   currentAccountId,
   onSelectAccount,
+  entryIndex, // Receive the entryIndex
 }: any) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [accounts, setAccounts] = useState([]);
@@ -58,7 +59,7 @@ const AccountCodeSearch = ({
         setSearchTerm(newInputValue);
       }}
       onChange={(event, newValue) => {
-        onSelectAccount(newValue || { code: "", name: "" });
+        onSelectAccount(newValue || { code: "", name: "" }, entryIndex); // Pass the entryIndex back to onSelectAccount
       }}
     />
   );

@@ -82,7 +82,12 @@ const NewTransactionPage: React.FC = () => {
     value: any
   ) => {
     const updatedEntries = [...entries];
-    updatedEntries[index] = { ...updatedEntries[index], [field]: value };
+    if (index >= 0 && index < updatedEntries.length) {
+      updatedEntries[index] = { ...updatedEntries[index], [field]: value };
+    } else {
+      // Handle the new entry case
+      setNewEntry({ ...newEntry, [field]: value });
+    }
     setEntries(updatedEntries);
   };
 
@@ -253,13 +258,9 @@ const NewTransactionPage: React.FC = () => {
           fiscalYearId={fiscalYearId}
           currentAccountId={entry.accountId}
           onSelectAccount={(selectedAccount: { code: any }) => {
-            const updatedEntries = [...entries];
-            updatedEntries[index] = {
-              ...updatedEntries[index],
-              accountId: selectedAccount.code,
-            };
-            setEntries(updatedEntries);
+            handleNewEntryChange(index, "accountId", selectedAccount.code);
           }}
+          entryIndex={index} // Pass the index so AccountCodeSearch knows which entry it's dealing with
         />
       </TableCell>
       <TableCell>
@@ -267,13 +268,13 @@ const NewTransactionPage: React.FC = () => {
           fiscalYearId={fiscalYearId}
           currentAccountId={entry.counterAccountId}
           onSelectAccount={(selectedAccount: { code: any }) => {
-            const updatedEntries = [...entries];
-            updatedEntries[index] = {
-              ...updatedEntries[index],
-              counterAccountId: selectedAccount.code,
-            };
-            setEntries(updatedEntries);
+            handleNewEntryChange(
+              index,
+              "counterAccountId",
+              selectedAccount.code
+            );
           }}
+          entryIndex={index} // Pass the index so AccountCodeSearch knows which entry it's dealing with
         />
       </TableCell>
       <TableCell>
@@ -358,6 +359,10 @@ const NewTransactionPage: React.FC = () => {
               <TableCell>Amount</TableCell>
               <TableCell>Description</TableCell>
             </TableRow>
+          </TableHead>
+          <TableBody>
+            {entries.map((entry, index) => renderEntryRow(entry, index))}
+            {renderEntryRow(newEntry, entries.length)}
             <div>
               <input
                 type="file"
@@ -370,10 +375,6 @@ const NewTransactionPage: React.FC = () => {
                 <p>No file selected</p>
               )}
             </div>
-          </TableHead>
-          <TableBody>
-            {entries.map((entry, index) => renderEntryRow(entry, index))}
-            {renderEntryRow(newEntry, entries.length)}
           </TableBody>
         </Table>
       </TableContainer>
