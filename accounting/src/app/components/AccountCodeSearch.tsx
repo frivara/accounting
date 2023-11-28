@@ -59,7 +59,15 @@ const AccountCodeSearch = ({
         setSearchTerm(newInputValue);
       }}
       onChange={(event, newValue) => {
-        onSelectAccount(newValue || { code: "", name: "" }, entryIndex); // Pass the entryIndex back to onSelectAccount
+        console.log("Autocomplete onChange:", newValue);
+        if (newValue) {
+          onSelectAccount({
+            code: newValue.code,
+            name: newValue.name,
+          });
+        } else {
+          onSelectAccount({ code: "", name: "" });
+        }
       }}
     />
   );

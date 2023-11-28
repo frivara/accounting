@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { collection, addDoc, getDocs } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../db/firebase"; // Adjust the import path accordingly
 import {
   Button,
@@ -11,9 +11,14 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import { styled } from "@mui/system";
 import Papa from "papaparse";
+import AccountCodeSearch from "@/app/components/AccountCodeSearch"; // Make sure the path is correct
 
 interface CoaAccount {
   code: string;
@@ -32,6 +37,8 @@ const ChartOfAccountsPage = () => {
     name: "",
   });
   const [templateName, setTemplateName] = useState<string>("");
+  const [defaultTemplates, setDefaultTemplates] = useState<any[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
 
   const fileInputRef: any = useRef(null);
 
@@ -40,60 +47,64 @@ const ChartOfAccountsPage = () => {
   };
 
   useEffect(() => {
-    // Fetch existing CoA templates/accounts from Firebase on page load
-    const fetchAccounts = async () => {
+    console.log("Accounts State After Update:", accounts);
+  }, [accounts]); // Only re-run the effect if 'accounts' changes
+
+  useEffect(() => {
+    const fetchDefaultTemplates = async () => {
       const querySnapshot = await getDocs(
-        collection(db, "chartOfAccountsTemplates")
+        query(
+          collection(db, "chartOfAccountsTemplates"),
+          where("isDefault", "==", true)
+        )
       );
-      // For simplicity, load the first template found for the WIP
-      const firstDoc = querySnapshot.docs[0];
-      if (firstDoc) {
-        setAccounts(firstDoc.data().accounts);
-        setTemplateName(firstDoc.data().templateName);
-      }
+      const templates = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setDefaultTemplates(templates);
     };
-    fetchAccounts();
+
+    fetchDefaultTemplates();
   }, []);
 
-  const handleAccountChange = (index: number, field: string, value: string) => {
-    const updatedAccounts: any = [...accounts];
-    updatedAccounts[index][field] = value;
+  const handleAccountChange = (
+    index: number,
+    field: keyof CoaAccount,
+    value: string
+  ) => {
+    const updatedAccounts = [...accounts];
+    updatedAccounts[index] = { ...updatedAccounts[index], [field]: value };
     setAccounts(updatedAccounts);
   };
 
-  const handleNewAccountChange = (field: string, value: string) => {
+  const handleNewAccountChange = (field: keyof CoaAccount, value: string) => {
     setNewAccount((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleAddAccount = () => {
-    if (newAccount.code !== "" || newAccount.name !== "") {
+    if (newAccount.code !== "" && newAccount.name !== "") {
       setAccounts((prev) => [...prev, newAccount]);
       setNewAccount({ code: "", name: "" }); // Reset new account fields
     }
   };
 
   const handleSaveTemplate = async () => {
-    // Log data to be saved
-    console.log("Saving Template:", templateName, accounts);
-
-    // Validate accounts to ensure no undefined values
-    const validAccounts = accounts.filter(
-      (account) => account.code && account.name
-    );
+    const userTemplate = {
+      templateName,
+      accounts,
+      isDefault: false, // User templates are not default
+    };
 
     try {
-      await addDoc(collection(db, "chartOfAccountsTemplates"), {
-        templateName,
-        accounts: validAccounts,
-      });
+      const docRef = await addDoc(
+        collection(db, "chartOfAccountsTemplates"),
+        userTemplate
+      );
+      console.log("User template saved with ID: ", docRef.id);
       alert("Template saved successfully!");
-
-      // Reset the form fields after successful save
-      setAccounts([]); // Clear the accounts list
-      setTemplateName(""); // Clear the template name
-      setNewAccount({ code: "", name: "" }); // Reset new account fields
     } catch (error) {
-      console.error("Error saving template:", error);
+      console.error("Error saving user template:", error);
       alert("Failed to save template. Please try again.");
     }
   };
@@ -104,35 +115,94 @@ const ChartOfAccountsPage = () => {
       const file = files[0];
 
       // Extract file name without extension
-      const fileName = file.name.split(".").slice(0, -1).join(".");
+      const fileName = file.name.replace(/\.[^/.]+$/, "");
       setTemplateName(fileName); // Set the file name as template name
 
       Papa.parse(file, {
         header: true,
         complete: (result) => {
           console.log("Parsed CSV:", result.data);
-          processCsvData(result.data);
+          processCsvData(result.data, fileName); // Pass fileName here
         },
       });
     }
   };
 
-  const processCsvData = (data: any[]) => {
+  const processCsvData = (data: any[], fileName: string) => {
+    // Add fileName parameter here
     const accountsFromCsv = data
-      .filter(
-        (row: { [x: string]: any }) =>
-          row["Account Code"] && row["Account Name"]
-      ) // Add this filter to remove empty rows
-      .map((row: { [x: string]: any }) => ({
+      .filter((row) => row["Account Code"] && row["Account Name"])
+      .map((row) => ({
         code: row["Account Code"],
         name: row["Account Name"],
       }));
 
-    setAccounts(accountsFromCsv);
+    // Use the fileName parameter when setting the templateToSave
+    const templateToSave = {
+      templateName: fileName, // Use fileName directly
+      accounts: accountsFromCsv,
+      isDefault: true,
+    };
+
+    // Log to verify the correct object is being created
+    console.log("Template to Save:", templateToSave);
+
+    // Call a function to save this object to the database
+    saveTemplateToDatabase(templateToSave);
+  };
+
+  const saveTemplateToDatabase = async (template: any) => {
+    try {
+      // Replace with your Firebase collection path
+      const docRef = await addDoc(
+        collection(db, "chartOfAccountsTemplates"),
+        template
+      );
+      console.log("Template saved with ID: ", docRef.id);
+    } catch (error) {
+      console.error("Error adding template: ", error);
+    }
+  };
+
+  const handleTemplateSelection = (templateId: string) => {
+    const template = defaultTemplates.find((t) => t.id === templateId);
+    setSelectedTemplate(template);
+    if (template) {
+      // Clone the accounts data to avoid direct state mutation
+      const accountsClone = template.accounts.map((account: any) => ({
+        ...account,
+      }));
+      setAccounts(accountsClone);
+      setTemplateName(template.templateName);
+    } else {
+      setAccounts([]);
+      setTemplateName("");
+    }
+
+    // Log the selected template immediately
+    console.log("Selected Template:", template);
   };
 
   return (
     <StyledContainer>
+      <FormControl fullWidth>
+        <InputLabel id="default-template-select-label">
+          Select a Default Template
+        </InputLabel>
+        <Select
+          labelId="default-template-select-label"
+          value={selectedTemplate ? selectedTemplate.id : ""}
+          label="Select a Default Template"
+          onChange={(e) => handleTemplateSelection(e.target.value)}
+        >
+          {defaultTemplates.map((template) => (
+            <MenuItem key={template.id} value={template.id}>
+              {template.templateName}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
       <TextField
         label="Template Name"
         value={templateName}
@@ -146,16 +216,24 @@ const ChartOfAccountsPage = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {accounts.map((account: any, index) => (
+          {accounts.map((account, index) => (
             <TableRow key={index}>
               <TableCell>
-                <TextField
-                  value={account.code}
-                  onChange={(e) =>
-                    handleAccountChange(index, "code", e.target.value)
-                  }
+                <AccountCodeSearch
+                  currentAccountId={account.code}
+                  onSelectAccount={(selectedAccount: {
+                    code: string;
+                    name: string;
+                  }) => {
+                    if (selectedAccount) {
+                      console.log("selectedAccount: " + selectedAccount);
+                      handleAccountChange(index, "code", selectedAccount.code);
+                      handleAccountChange(index, "name", selectedAccount.name);
+                    }
+                  }}
                 />
               </TableCell>
+
               <TableCell>
                 <TextField
                   value={account.name}
@@ -168,12 +246,24 @@ const ChartOfAccountsPage = () => {
           ))}
           <TableRow>
             <TableCell>
-              <TextField
-                placeholder="New Account Code"
-                value={newAccount.code}
-                onChange={(e) => handleNewAccountChange("code", e.target.value)}
+              <AccountCodeSearch
+                currentAccountId={newAccount.code}
+                onSelectAccount={(selectedAccount: {
+                  code: string;
+                  name: any;
+                }) => {
+                  if (selectedAccount) {
+                    const code = selectedAccount.code.split(" - ")[0]; // Extract just the code
+                    setNewAccount((prev) => ({
+                      ...prev,
+                      code: code, // Set only the code part
+                      name: selectedAccount.name, // This should already be just the name
+                    }));
+                  }
+                }}
               />
             </TableCell>
+
             <TableCell>
               <TextField
                 placeholder="New Account Name"
