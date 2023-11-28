@@ -1,6 +1,14 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "../../db/firebase"; // Adjust the import path accordingly
 import {
   Button,
@@ -15,10 +23,12 @@ import {
   Select,
   FormControl,
   InputLabel,
+  ListSubheader,
 } from "@mui/material";
 import { styled } from "@mui/system";
 import Papa from "papaparse";
-import AccountCodeSearch from "@/app/components/AccountCodeSearch"; // Make sure the path is correct
+import AccountCodeSearch from "@/app/components/AccountCodeSearch";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 interface CoaAccount {
   code: string;
@@ -38,6 +48,7 @@ const ChartOfAccountsPage = () => {
   });
   const [templateName, setTemplateName] = useState<string>("");
   const [defaultTemplates, setDefaultTemplates] = useState<any[]>([]);
+  const [customTemplates, setCustomTemplates] = useState<any[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
 
   const fileInputRef: any = useRef(null);
@@ -45,10 +56,6 @@ const ChartOfAccountsPage = () => {
   const handleFileButtonClick = () => {
     fileInputRef.current!.click();
   };
-
-  useEffect(() => {
-    console.log("Accounts State After Update:", accounts);
-  }, [accounts]); // Only re-run the effect if 'accounts' changes
 
   useEffect(() => {
     const fetchDefaultTemplates = async () => {
@@ -66,6 +73,23 @@ const ChartOfAccountsPage = () => {
     };
 
     fetchDefaultTemplates();
+
+    const fetchCustomTemplates = async () => {
+      const userQuerySnapshot = await getDocs(
+        query(
+          collection(db, "chartOfAccountsTemplates"),
+          //where("userId", "==", userId), // Replace with actual user ID logic
+          where("isDefault", "==", false)
+        )
+      );
+      const userTemplates = userQuerySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setCustomTemplates(userTemplates);
+    };
+
+    fetchCustomTemplates();
   }, []);
 
   const handleAccountChange = (
@@ -76,6 +100,28 @@ const ChartOfAccountsPage = () => {
     const updatedAccounts = [...accounts];
     updatedAccounts[index] = { ...updatedAccounts[index], [field]: value };
     setAccounts(updatedAccounts);
+  };
+
+  const handleDeleteAccount = (index: number) => {
+    setAccounts((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSaveAccount = async () => {
+    // Update the database with the new accounts list
+    if (selectedTemplate && !selectedTemplate.isDefault) {
+      const updatedTemplate = {
+        ...selectedTemplate,
+        accounts: accounts,
+      };
+
+      await updateDoc(
+        doc(db, "chartOfAccountsTemplates", selectedTemplate.id),
+        updatedTemplate
+      );
+      alert("Account changes saved successfully!");
+    } else {
+      alert("You can only modify custom templates.");
+    }
   };
 
   const handleNewAccountChange = (field: keyof CoaAccount, value: string) => {
@@ -121,7 +167,6 @@ const ChartOfAccountsPage = () => {
       Papa.parse(file, {
         header: true,
         complete: (result) => {
-          console.log("Parsed CSV:", result.data);
           processCsvData(result.data, fileName); // Pass fileName here
         },
       });
@@ -144,9 +189,6 @@ const ChartOfAccountsPage = () => {
       isDefault: true,
     };
 
-    // Log to verify the correct object is being created
-    console.log("Template to Save:", templateToSave);
-
     // Call a function to save this object to the database
     saveTemplateToDatabase(templateToSave);
   };
@@ -165,8 +207,14 @@ const ChartOfAccountsPage = () => {
   };
 
   const handleTemplateSelection = (templateId: string) => {
-    const template = defaultTemplates.find((t) => t.id === templateId);
+    // Attempt to find the template in both default and custom templates
+    let template = defaultTemplates.find((t) => t.id === templateId);
+    if (!template) {
+      template = customTemplates.find((t) => t.id === templateId);
+    }
+
     setSelectedTemplate(template);
+
     if (template) {
       // Clone the accounts data to avoid direct state mutation
       const accountsClone = template.accounts.map((account: any) => ({
@@ -175,34 +223,38 @@ const ChartOfAccountsPage = () => {
       setAccounts(accountsClone);
       setTemplateName(template.templateName);
     } else {
+      // Reset if no template is found
       setAccounts([]);
       setTemplateName("");
     }
-
-    // Log the selected template immediately
-    console.log("Selected Template:", template);
   };
 
   return (
     <StyledContainer>
       <FormControl fullWidth>
         <InputLabel id="default-template-select-label">
-          Select a Default Template
+          Select a Template
         </InputLabel>
         <Select
           labelId="default-template-select-label"
           value={selectedTemplate ? selectedTemplate.id : ""}
-          label="Select a Default Template"
+          label="Select a Template"
           onChange={(e) => handleTemplateSelection(e.target.value)}
         >
+          <ListSubheader>Default Templates</ListSubheader>
           {defaultTemplates.map((template) => (
+            <MenuItem key={template.id} value={template.id}>
+              {template.templateName}
+            </MenuItem>
+          ))}
+          <ListSubheader>Custom Templates</ListSubheader>
+          {customTemplates.map((template) => (
             <MenuItem key={template.id} value={template.id}>
               {template.templateName}
             </MenuItem>
           ))}
         </Select>
       </FormControl>
-
       <TextField
         label="Template Name"
         value={templateName}
@@ -226,7 +278,6 @@ const ChartOfAccountsPage = () => {
                     name: string;
                   }) => {
                     if (selectedAccount) {
-                      console.log("selectedAccount: " + selectedAccount);
                       handleAccountChange(index, "code", selectedAccount.code);
                       handleAccountChange(index, "name", selectedAccount.name);
                     }
@@ -241,6 +292,11 @@ const ChartOfAccountsPage = () => {
                     handleAccountChange(index, "name", e.target.value)
                   }
                 />
+              </TableCell>
+              <TableCell>
+                <Button onClick={() => handleDeleteAccount(index)}>
+                  <DeleteIcon />
+                </Button>
               </TableCell>
             </TableRow>
           ))}
@@ -279,6 +335,9 @@ const ChartOfAccountsPage = () => {
       </Table>
       <Button variant="contained" color="primary" onClick={handleSaveTemplate}>
         Save Template
+      </Button>
+      <Button variant="contained" color="primary" onClick={handleSaveAccount}>
+        Save Changes to Account
       </Button>
       <Button
         variant="contained"
