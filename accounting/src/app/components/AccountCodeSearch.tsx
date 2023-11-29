@@ -1,29 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "../db/firebase"; // Adjust the import path accordingly
+import { db } from "../db/firebase";
 import { Autocomplete, TextField } from "@mui/material";
 
 const AccountCodeSearch = ({
   fiscalYearId,
   currentAccountId,
   onSelectAccount,
-  entryIndex, // Receive the entryIndex
 }: any) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [accounts, setAccounts] = useState([]);
-  const [filteredAccounts, setFilteredAccounts] = useState([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [filteredAccounts, setFilteredAccounts] = useState<any[]>([]);
 
-  // Fetch CoA templates/accounts from Firebase
   useEffect(() => {
     const fetchAccounts = async () => {
-      // You might want to query only specific documents based on fiscalYearId
+      const isDefault = true; // Replace with actual logic
       const coaCollection = collection(db, "chartOfAccountsTemplates");
-      const snapshot = await getDocs(coaCollection);
-      const accountsData: any = [];
-      snapshot.forEach((doc) => {
-        // Extracting accounts from each template
-        const templateAccounts = doc.data().accounts || [];
-        accountsData.push(...templateAccounts);
+      const queryCondition = isDefault
+        ? where("isDefault", "==", true)
+        : where("isDefault", "==", false);
+      const querySnapshot = await getDocs(query(coaCollection, queryCondition));
+
+      const accountsData = querySnapshot.docs.flatMap((doc) => {
+        return doc
+          .data()
+          .accounts.map((account: { code: string; name: string }) => ({
+            ...account,
+            uniqueId: `${doc.id}-${account.code}-${account.name}`,
+          }));
       });
       setAccounts(accountsData);
     };
@@ -31,40 +35,48 @@ const AccountCodeSearch = ({
     fetchAccounts();
   }, [fiscalYearId]);
 
-  // Filter accounts based on searchTerm
   useEffect(() => {
-    if (searchTerm) {
-      const filtered = accounts.filter((account: any) =>
-        account.code.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredAccounts(filtered);
-    } else {
-      setFilteredAccounts([]);
-    }
+    const filtered = searchTerm
+      ? accounts.filter((account: any) =>
+          account.code.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      : [];
+    setFilteredAccounts(filtered);
   }, [searchTerm, accounts]);
 
-  const selectedAccount: any =
-    accounts.find((account: any) => account.code === currentAccountId) || null;
+  const selectedAccount =
+    accounts.find(
+      (account: { code: string }) => account.code === currentAccountId
+    ) || null;
 
   return (
     <Autocomplete
+      freeSolo
       value={selectedAccount}
       options={filteredAccounts}
-      getOptionLabel={(option) => `${option.code} - ${option.name}`}
+      getOptionLabel={(option) =>
+        option ? `${option.code} - ${option.name}` : ""
+      }
       style={{ width: 300 }}
       renderInput={(params) => (
         <TextField {...params} label="Account Code" variant="outlined" />
       )}
       onInputChange={(event, newInputValue) => {
         setSearchTerm(newInputValue);
+        // If the input value is not from the selections, update the parent state
+        if (
+          !filteredAccounts.find((account) => account.code === newInputValue)
+        ) {
+          onSelectAccount({ code: newInputValue, name: "" });
+        }
       }}
       onChange={(event, newValue) => {
-        console.log("Autocomplete onChange:", newValue);
-        if (newValue) {
-          onSelectAccount({
-            code: newValue.code,
-            name: newValue.name,
-          });
+        if (typeof newValue === "string") {
+          onSelectAccount({ code: newValue, name: "" });
+        } else if (newValue && newValue.inputValue) {
+          onSelectAccount({ code: newValue.inputValue, name: "" });
+        } else if (newValue) {
+          onSelectAccount({ code: newValue.code, name: newValue.name });
         } else {
           onSelectAccount({ code: "", name: "" });
         }

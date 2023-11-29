@@ -9,6 +9,7 @@ import {
   onSnapshot,
   doc,
   deleteDoc,
+  getDocs,
 } from "firebase/firestore";
 import { db } from "../db/firebase";
 import {
@@ -39,7 +40,8 @@ export interface Account {
 const OrganisationsPage: React.FC = () => {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [accountingPlan, setAccountingPlan] = useState("");
+  const [accountingPlans, setAccountingPlans] = useState<any>([]);
+  const [accountingPlan, setAccountingPlan] = useState<any>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
@@ -128,6 +130,22 @@ const OrganisationsPage: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    // Fetch Chart of Accounts Templates
+    const fetchAccountingPlans = async () => {
+      const querySnapshot = await getDocs(
+        collection(db, "chartOfAccountsTemplates")
+      );
+      const plans = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setAccountingPlans(plans);
+    };
+
+    fetchAccountingPlans();
+  }, []);
+
   return (
     <div>
       <Typography variant="h4" gutterBottom>
@@ -187,8 +205,11 @@ const OrganisationsPage: React.FC = () => {
           <MenuItem value="">
             <em>Select an accounting plan</em>
           </MenuItem>
-          <MenuItem value="cashAccounting">Cash accounting</MenuItem>
-          <MenuItem value="accrualAccounting">Accrual accounting</MenuItem>
+          {accountingPlans.map((plan: any) => (
+            <MenuItem key={plan.id} value={plan.templateName}>
+              {plan.templateName}
+            </MenuItem>
+          ))}
         </Select>
 
         <Button

@@ -50,6 +50,7 @@ const ChartOfAccountsPage = () => {
   const [defaultTemplates, setDefaultTemplates] = useState<any[]>([]);
   const [customTemplates, setCustomTemplates] = useState<any[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [isCodeValid, setIsCodeValid] = useState(true);
 
   const fileInputRef: any = useRef(null);
 
@@ -97,6 +98,9 @@ const ChartOfAccountsPage = () => {
     field: keyof CoaAccount,
     value: string
   ) => {
+    if (field === "code") {
+      setIsCodeValid(value.length === 4);
+    }
     const updatedAccounts = [...accounts];
     updatedAccounts[index] = { ...updatedAccounts[index], [field]: value };
     setAccounts(updatedAccounts);
@@ -128,14 +132,24 @@ const ChartOfAccountsPage = () => {
     setNewAccount((prev) => ({ ...prev, [field]: value }));
   };
 
+  useEffect(() => {
+    console.log(newAccount);
+  }, [newAccount]);
+
   const handleAddAccount = () => {
     if (newAccount.code !== "" && newAccount.name !== "") {
+      console.log("handleAddAccount newAccount: " + newAccount);
       setAccounts((prev) => [...prev, newAccount]);
       setNewAccount({ code: "", name: "" }); // Reset new account fields
     }
   };
 
   const handleSaveTemplate = async () => {
+    if (accounts.some((account) => account.code.length !== 4)) {
+      alert("Cannot save: One or more account codes are invalid.");
+      return;
+    }
+
     const userTemplate = {
       templateName,
       accounts,
@@ -229,6 +243,12 @@ const ChartOfAccountsPage = () => {
     }
   };
 
+  const onAccountCodeChange = (index: number, newCode: string) => {
+    const updatedAccounts = [...accounts];
+    updatedAccounts[index] = { ...updatedAccounts[index], code: newCode };
+    setAccounts(updatedAccounts);
+  };
+
   return (
     <StyledContainer>
       <FormControl fullWidth>
@@ -271,20 +291,19 @@ const ChartOfAccountsPage = () => {
           {accounts.map((account, index) => (
             <TableRow key={index}>
               <TableCell>
-                <AccountCodeSearch
-                  currentAccountId={account.code}
-                  onSelectAccount={(selectedAccount: {
-                    code: string;
-                    name: string;
-                  }) => {
-                    if (selectedAccount) {
-                      handleAccountChange(index, "code", selectedAccount.code);
-                      handleAccountChange(index, "name", selectedAccount.name);
-                    }
-                  }}
+                <TextField
+                  value={account.code}
+                  onChange={(e) =>
+                    handleAccountChange(index, "code", e.target.value)
+                  }
+                  error={!isCodeValid && account.code.length > 0}
+                  helperText={
+                    !isCodeValid && account.code.length > 0
+                      ? "Code must be exactly 4 characters"
+                      : ""
+                  }
                 />
               </TableCell>
-
               <TableCell>
                 <TextField
                   value={account.name}
