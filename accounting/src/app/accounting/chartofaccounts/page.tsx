@@ -137,8 +137,7 @@ const ChartOfAccountsPage = () => {
   }, [newAccount]);
 
   const handleAddAccount = () => {
-    if (newAccount.code !== "" && newAccount.name !== "") {
-      console.log("handleAddAccount newAccount: " + newAccount);
+    if (newAccount.code.length == 4 && newAccount.name !== "") {
       setAccounts((prev) => [...prev, newAccount]);
       setNewAccount({ code: "", name: "" }); // Reset new account fields
     }

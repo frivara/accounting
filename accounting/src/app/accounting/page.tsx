@@ -41,7 +41,10 @@ const OrganisationsPage: React.FC = () => {
   const router = useRouter();
   const [name, setName] = useState("");
   const [accountingPlans, setAccountingPlans] = useState<any>([]);
-  const [accountingPlan, setAccountingPlan] = useState<any>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
+    null
+  );
+
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
@@ -70,10 +73,9 @@ const OrganisationsPage: React.FC = () => {
   };
 
   const handleCreateAccount = async (e: FormEvent<HTMLFormElement>) => {
-    // Prevent the form from reloading
     e.preventDefault();
 
-    if (!name || !accountingPlan) {
+    if (!name || !selectedTemplateId) {
       console.log("You need to type in a name and choose an accounting plan");
       return;
     }
@@ -83,13 +85,13 @@ const OrganisationsPage: React.FC = () => {
         id: Math.random().toString(36).substring(7),
         firestoreId: "",
         name,
-        accountingPlan,
+        accountingPlan: selectedTemplateId, // Use the selected template ID here
       };
 
       await addDoc(collection(db, "accounts"), newAccount);
 
       setName("");
-      setAccountingPlan("");
+      setSelectedTemplateId(null); // Reset the selected template ID
     } catch (error) {
       console.error(error);
     }
@@ -146,6 +148,13 @@ const OrganisationsPage: React.FC = () => {
     fetchAccountingPlans();
   }, []);
 
+  const getTemplateNameById = (templateId: string) => {
+    const template = accountingPlans.find(
+      (plan: { id: string }) => plan.id === templateId
+    );
+    return template ? template.templateName : "Unknown";
+  };
+
   return (
     <div>
       <Typography variant="h4" gutterBottom>
@@ -155,7 +164,7 @@ const OrganisationsPage: React.FC = () => {
         {accounts.map((account: Account) => (
           <ListItem
             key={account.id}
-            onClick={() => handleViewAccount(account)} // Make the list item clickable
+            onClick={() => handleViewAccount(account)}
             sx={{
               cursor: "pointer", // Change mouse pointer on hover
               "&:hover": {
@@ -177,7 +186,7 @@ const OrganisationsPage: React.FC = () => {
           >
             <ListItemText
               primary={account.name}
-              secondary={account.accountingPlan}
+              secondary={getTemplateNameById(account.accountingPlan)}
             />
           </ListItem>
         ))}
@@ -196,8 +205,8 @@ const OrganisationsPage: React.FC = () => {
         />
 
         <Select
-          value={accountingPlan}
-          onChange={(e) => setAccountingPlan(e.target.value as string)}
+          value={selectedTemplateId}
+          onChange={(e) => setSelectedTemplateId(e.target.value as string)}
           displayEmpty
           fullWidth
           margin="none"
@@ -206,7 +215,7 @@ const OrganisationsPage: React.FC = () => {
             <em>Select an accounting plan</em>
           </MenuItem>
           {accountingPlans.map((plan: any) => (
-            <MenuItem key={plan.id} value={plan.templateName}>
+            <MenuItem key={plan.id} value={plan.id}>
               {plan.templateName}
             </MenuItem>
           ))}
