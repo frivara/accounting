@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { doc, setDoc, collection } from "firebase/firestore";
+import { doc, setDoc, collection, getDoc } from "firebase/firestore";
 import { db } from "../../../../../../db/firebase";
 import {
   Button,
@@ -15,12 +15,12 @@ import {
   Paper,
   Container,
   styled,
+  Autocomplete,
 } from "@mui/material";
 import { runTransaction, increment } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../../../../../../db/firebase"; // Adjust this import path to where your Firebase storage is initialized
 import AccountCodeSearch from "@/app/components/AccountCodeSearch";
-import Autocomplete from "@mui/material/Autocomplete";
 
 interface Entry {
   accountId: string;
@@ -49,15 +49,42 @@ const NewTransactionPage: React.FC = () => {
   const fiscalYearId = pathSegments[pathSegments.length - 3];
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofFileName, setProofFileName] = useState<string | null>(null);
+  const [accountCodes, setAccountCodes] = useState([]);
 
   const [newEntry, setNewEntry] = useState<Entry>({
-    accountId: "",
+    accountId: "", // Ensure that this is an empty string
     type: "debit",
     amount: 0,
     description: "",
   });
 
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchAccountCodes = async () => {
+      // Ensure that accountId is the correct ID from the "accounts" collection
+      const accountDoc = await getDoc(doc(db, "accounts", accountId));
+      const accountData = accountDoc.data();
+      if (accountData) {
+        const accountingPlanId = accountData.accountingPlan;
+
+        // Fetch account codes based on the accounting plan ID
+        const planDoc = await getDoc(
+          doc(db, "chartOfAccountsTemplates", accountingPlanId)
+        );
+        const planData = planDoc.data();
+        if (planData && planData.accounts) {
+          setAccountCodes(planData.accounts);
+        }
+      }
+    };
+
+    fetchAccountCodes();
+  }, [accountId]);
+
+  useEffect(() => {
+    console.log(accountCodes);
+  }, [accountCodes]);
 
   const handleAddEntry = () => {
     if (!newEntry.accountId || newEntry.amount <= 0) {
@@ -81,14 +108,15 @@ const NewTransactionPage: React.FC = () => {
     field: keyof Entry,
     value: any
   ) => {
-    const updatedEntries = [...entries];
-    if (index >= 0 && index < updatedEntries.length) {
+    if (index >= 0 && index < entries.length) {
+      // Update existing entry
+      const updatedEntries = [...entries];
       updatedEntries[index] = { ...updatedEntries[index], [field]: value };
+      setEntries(updatedEntries);
     } else {
-      // Handle the new entry case
-      setNewEntry({ ...newEntry, [field]: value });
+      // Update new entry
+      setNewEntry((prev) => ({ ...prev, [field]: value }));
     }
-    setEntries(updatedEntries);
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -251,30 +279,50 @@ const NewTransactionPage: React.FC = () => {
     });
   };
 
-  const renderEntryRow = (entry: Entry, index: number) => (
+  const renderEntryRow = (entry: any, index: any) => (
     <TableRow key={index}>
       <TableCell>
-        <AccountCodeSearch
-          fiscalYearId={fiscalYearId}
-          currentAccountId={entry.accountId}
-          onSelectAccount={(selectedAccount: { code: any }) => {
-            handleNewEntryChange(index, "accountId", selectedAccount.code);
+        <Autocomplete
+          freeSolo
+          options={accountCodes}
+          getOptionLabel={(option) =>
+            typeof option === "string"
+              ? option
+              : `${option.code} - ${option.name}`
+          }
+          value={entry.accountId}
+          onChange={(event, newValue) => {
+            if (typeof newValue === "string") {
+              handleNewEntryChange(index, "accountId", newValue);
+            } else if (newValue) {
+              handleNewEntryChange(index, "accountId", newValue.code);
+            }
           }}
-          entryIndex={index} // Pass the index so AccountCodeSearch knows which entry it's dealing with
+          renderInput={(params) => (
+            <TextField {...params} label="Account Code" />
+          )}
         />
       </TableCell>
       <TableCell>
-        <AccountCodeSearch
-          fiscalYearId={fiscalYearId}
-          currentAccountId={entry.counterAccountId}
-          onSelectAccount={(selectedAccount: { code: any }) => {
-            handleNewEntryChange(
-              index,
-              "counterAccountId",
-              selectedAccount.code
-            );
+        <Autocomplete
+          freeSolo
+          options={accountCodes}
+          getOptionLabel={(option) =>
+            typeof option === "string"
+              ? option
+              : `${option.code} - ${option.name}`
+          }
+          value={entry.counterAccountId}
+          onChange={(event, newValue) => {
+            if (typeof newValue === "string") {
+              handleNewEntryChange(index, "counterAccountId", newValue);
+            } else if (newValue) {
+              handleNewEntryChange(index, "counterAccountId", newValue.code);
+            }
           }}
-          entryIndex={index} // Pass the index so AccountCodeSearch knows which entry it's dealing with
+          renderInput={(params) => (
+            <TextField {...params} label="Counter Account Code" />
+          )}
         />
       </TableCell>
       <TableCell>
