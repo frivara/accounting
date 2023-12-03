@@ -28,8 +28,8 @@ const Navbar: React.FC = () => {
 
   const menuItems = [
     { text: "Home", path: "/" },
-    { text: "Bookkeeping", path: "/accounting" },
-    { text: "Chart of Accounts", path: "/accounting/chartofaccounts" },
+    { text: "Bokföring", path: "/accounting" },
+    { text: "Kontoplaner", path: "/accounting/chartofaccounts" },
   ];
 
   return (
@@ -48,7 +48,7 @@ const Navbar: React.FC = () => {
       anchor="left"
     >
       <Typography variant="h6" sx={{ padding: 2 }}>
-        Accounting Web Application
+        Bokföring 2.0
       </Typography>
       <List>
         {menuItems.map((item, index) => (

@@ -12,11 +12,18 @@ import {
 import { db } from "../../../../db/firebase";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Accordion from "@mui/material/Accordion";
-import AccordionSummary from "@mui/material/AccordionSummary";
-import AccordionDetails from "@mui/material/AccordionDetails";
+
 import ExpandMoreIcon from "@mui/material/Icon";
-import { Button } from "@mui/material";
+import {
+  Box,
+  Grid,
+  Typography,
+  Button,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Link as MuiLink,
+} from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 interface Transaction {
@@ -168,63 +175,95 @@ const FiscalYearPage: React.FC = () => {
   };
 
   return (
-    <div>
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={() => router.push(`/accounting/${accountId}/`)}
-        sx={{ position: "absolute", top: 16, left: `calc(240px + 16px)` }}
-      >
-        Back
-      </Button>
-      <h1>Fiscal Year</h1>
-      <p>Start date: {fiscalYear?.startDate}</p>
-      <p>End date: {fiscalYear?.endDate}</p>
-      {!isYearClosed && (
-        <Link
-          href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}/transactions/new`}
-        >
-          <button>Create New Transaction</button>
-        </Link>
-      )}
-      <div className="transactions-list">
-        {transactions.map((transaction) => (
-          <Accordion
-            key={transaction.id}
-            expanded={expandedTransactionId === transaction.id}
-            onChange={() => handleExpandClick(transaction.id)}
+    <Box sx={{ p: 3 }}>
+      {" "}
+      <Grid container spacing={2}>
+        {" "}
+        <Grid item xs={12}>
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={() => router.push(`/accounting/${accountId}/`)}
+            sx={{ mb: 2 }} // Add mb (margin bottom)
           >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <div>
-                {transaction.entries[0].description} - {transaction.date}
-              </div>
-            </AccordionSummary>
-            <AccordionDetails>
-              <div>ID: {transaction.id}</div>
-              {transaction.entries.map((entry, index) => (
-                <div key={index}>
-                  <div>
-                    {entry.type}: {entry.amount}
-                  </div>
-                  <div>Account ID: {entry.accountId}</div>
-                  <div>Counter Account ID: {entry.counterAccountId}</div>
-                </div>
-              ))}
-              <Link
-                href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}/transactions/${transaction.id}`}
-                passHref
-              >
-                <Button variant="contained" color="primary">
-                  View Transaction
-                </Button>
-              </Link>
-            </AccordionDetails>
-          </Accordion>
-        ))}
-      </div>
-      {!isYearClosed && (
-        <button onClick={closeFiscalYear}>Close Fiscal Year</button>
-      )}
-    </div>
+            Back
+          </Button>
+          <Typography variant="h4" gutterBottom>
+            {" "}
+            Fiscal Year
+          </Typography>
+          <Typography variant="body1" gutterBottom>
+            Start date: {fiscalYear?.startDate}
+          </Typography>
+          <Typography variant="body1" gutterBottom>
+            End date: {fiscalYear?.endDate}
+          </Typography>
+        </Grid>
+        <Grid item xs={12}>
+          {!isYearClosed && (
+            <MuiLink
+              href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}/transactions/new`}
+              underline="hover"
+            >
+              <Button variant="contained" color="primary" sx={{ mb: 2 }}>
+                {" "}
+                Create New Transaction
+              </Button>
+            </MuiLink>
+          )}
+        </Grid>
+        <Grid item xs={12}>
+          {transactions.map((transaction) => (
+            <Accordion
+              key={transaction.id}
+              expanded={expandedTransactionId === transaction.id}
+              onChange={() => handleExpandClick(transaction.id)}
+              sx={{ mb: 1 }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography>
+                  {transaction.entries[0].description} - {transaction.date}
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography>ID: {transaction.id}</Typography>
+                {transaction.entries.map((entry, index) => (
+                  <Box key={index} sx={{ my: 1 }}>
+                    {" "}
+                    <Typography>
+                      {entry.type}: {entry.amount}
+                    </Typography>
+                    <Typography>Account ID: {entry.accountId}</Typography>
+                    <Typography>
+                      Counter Account ID: {entry.counterAccountId}
+                    </Typography>
+                  </Box>
+                ))}
+                <Link
+                  href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}/transactions/${transaction.id}`}
+                  passHref
+                >
+                  <Button variant="contained" color="primary">
+                    View Transaction
+                  </Button>
+                </Link>
+              </AccordionDetails>
+            </Accordion>
+          ))}
+        </Grid>
+        <Grid item xs={12}>
+          {!isYearClosed && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={closeFiscalYear}
+              sx={{ mt: 2 }}
+            >
+              Close Fiscal Year
+            </Button>
+          )}
+        </Grid>
+      </Grid>
+    </Box>
   );
 };
 

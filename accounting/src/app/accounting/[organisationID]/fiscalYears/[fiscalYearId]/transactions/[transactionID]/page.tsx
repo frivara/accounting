@@ -14,6 +14,7 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Box,
 } from "@mui/material";
 import Link from "next/link";
 
@@ -73,23 +74,32 @@ const TransactionPage: React.FC = () => {
     const isPDF = /\.pdf$/.test(url);
 
     if (isImage) {
-      return <img src={url} alt="Uploaded File" style={{ maxWidth: "100%" }} />;
+      return (
+        <Box
+          component="img"
+          src={url}
+          alt="Uploaded File"
+          sx={{ maxWidth: "100%" }}
+        />
+      );
     } else if (isPDF) {
       return (
-        <a href={url} target="_blank" rel="noopener noreferrer">
+        <Link href={url} target="_blank" rel="noopener noreferrer">
           View PDF
-        </a>
+        </Link>
       );
     }
   };
 
   return (
     <div>
-      <h1>Transaction Details</h1>
+      <Typography variant="h5">Transaction Details</Typography>
       {transaction ? (
         <div>
-          <p>ID: {transaction.id}</p>
-          <p>Date: {new Date(transaction.date).toLocaleDateString()}</p>
+          <Typography>ID: {transaction.id}</Typography>
+          <Typography>
+            Date: {new Date(transaction.date).toLocaleDateString()}
+          </Typography>
 
           <TableContainer component={Paper}>
             <Table>
@@ -117,24 +127,25 @@ const TransactionPage: React.FC = () => {
           </TableContainer>
 
           {transaction.proofFileURL && (
-            <div
-              style={{
+            <Box
+              sx={{
                 position: "relative",
                 width: "20vw",
                 height: "desiredHeight",
               }}
             >
-              <h2>Proof of Transaction</h2>
-              <img
+              <Typography variant="h6">Proof of Transaction</Typography>
+              <Box
+                component="img"
                 src={transaction.proofFileURL}
                 alt="Uploaded File"
-                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                sx={{ width: "100%", height: "100%", objectFit: "contain" }}
               />
-            </div>
+            </Box>
           )}
         </div>
       ) : (
-        <p>Loading...</p>
+        <Typography>Loading...</Typography>
       )}
       <Link
         href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}`}

@@ -5,11 +5,11 @@ import {
   collection,
   addDoc,
   getDoc,
-  query,
   onSnapshot,
   doc,
   deleteDoc,
   getDocs,
+  query,
 } from "firebase/firestore";
 import { db } from "../db/firebase";
 import {
@@ -27,6 +27,11 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Grid,
+  Paper,
+  Card,
+  CardActions,
+  CardContent,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 
@@ -36,6 +41,8 @@ export interface Account {
   name: string;
   accountingPlan: string;
 }
+
+const drawerWidth = 240;
 
 const OrganisationsPage: React.FC = () => {
   const router = useRouter();
@@ -156,103 +163,110 @@ const OrganisationsPage: React.FC = () => {
   };
 
   return (
-    <div>
-      <Typography variant="h4" gutterBottom>
-        My organisations
-      </Typography>
-      <List>
-        {accounts.map((account: Account) => (
-          <ListItem
-            key={account.id}
-            onClick={() => handleViewAccount(account)}
-            sx={{
-              cursor: "pointer", // Change mouse pointer on hover
-              "&:hover": {
-                backgroundColor: "rgba(0, 0, 0, 0.04)",
-              },
-            }}
-            secondaryAction={
-              <IconButton
-                edge="end"
-                aria-label="delete"
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevent ListItem onClick from firing
-                  openDeleteDialog(account.firestoreId);
-                }}
+    <Grid
+      container
+      spacing={2}
+      style={{ paddingLeft: drawerWidth + 20, paddingRight: 20, marginTop: 20 }}
+    >
+      {" "}
+      <Grid item xs={12} md={6}>
+        <Card>
+          <CardContent>
+            <Typography variant="h4" gutterBottom>
+              Mina organisationer
+            </Typography>
+            <List>
+              {accounts.map((account) => (
+                <ListItem
+                  key={account.id}
+                  button
+                  onClick={() => handleViewAccount(account)}
+                >
+                  <ListItemText
+                    primary={account.name}
+                    secondary={getTemplateNameById(account.accountingPlan)}
+                  />
+                  <IconButton
+                    edge="end"
+                    aria-label="delete"
+                    onClick={(e) => openDeleteDialog(account.firestoreId)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItem>
+              ))}
+            </List>
+          </CardContent>
+        </Card>
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <Card>
+          <CardContent>
+            <Typography variant="h5" gutterBottom>
+              Skapa en ny organisation
+            </Typography>
+            <form onSubmit={handleCreateAccount}>
+              <TextField
+                label="Enter name of organisation"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                margin="normal"
+                fullWidth
+              />
+              <Select
+                value={selectedTemplateId || ""}
+                onChange={(e) => setSelectedTemplateId(e.target.value)}
+                displayEmpty
+                fullWidth
+                margin="dense"
               >
-                <DeleteIcon />
-              </IconButton>
-            }
-          >
-            <ListItemText
-              primary={account.name}
-              secondary={getTemplateNameById(account.accountingPlan)}
-            />
-          </ListItem>
-        ))}
-      </List>
-
-      <Typography variant="h5" gutterBottom>
-        Create a new organisation
-      </Typography>
-      <form onSubmit={handleCreateAccount}>
-        <TextField
-          label="Enter name of organisation"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          margin="normal"
-          fullWidth
-        />
-
-        <Select
-          value={selectedTemplateId}
-          onChange={(e) => setSelectedTemplateId(e.target.value as string)}
-          displayEmpty
-          fullWidth
-          margin="none"
-        >
-          <MenuItem value="">
-            <em>Select an accounting plan</em>
-          </MenuItem>
-          {accountingPlans.map((plan: any) => (
-            <MenuItem key={plan.id} value={plan.id}>
-              {plan.templateName}
-            </MenuItem>
-          ))}
-        </Select>
-
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          style={{ marginTop: 20 }}
-        >
-          Create organisation
-        </Button>
-      </form>
-      <Dialog
+                <MenuItem value="">
+                  <em>Välj en kontoplan</em>
+                </MenuItem>
+                {accountingPlans.map((plan: any) => (
+                  <MenuItem key={plan.id} value={plan.id}>
+                    {plan.templateName}
+                  </MenuItem>
+                ))}
+              </Select>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                style={{ marginTop: 20 }}
+              >
+                Skapa organisation
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </Grid>
+      <DeleteConfirmationDialog
         open={openDialog}
         onClose={closeDeleteDialog}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">{"Delete Account"}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            Are you sure you want to delete this account?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDeleteDialog} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleDeleteAccount} color="primary" autoFocus>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </div>
+        onConfirm={handleDeleteAccount}
+      />
+    </Grid>
   );
 };
+
+const DeleteConfirmationDialog = ({ open, onClose, onConfirm }: any) => (
+  <Dialog open={open} onClose={onClose}>
+    <DialogTitle>Delete Account</DialogTitle>
+    <DialogContent>
+      <DialogContentText>
+        Are you sure you want to delete this account?
+      </DialogContentText>
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={onClose} color="primary">
+        Cancel
+      </Button>
+      <Button onClick={onConfirm} color="primary" autoFocus>
+        Delete
+      </Button>
+    </DialogActions>
+  </Dialog>
+);
 
 export default OrganisationsPage;
