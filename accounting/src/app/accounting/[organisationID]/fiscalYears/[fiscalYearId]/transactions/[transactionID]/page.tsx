@@ -16,7 +16,8 @@ import {
   Paper,
   Box,
 } from "@mui/material";
-import Link from "next/link";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { useRouter } from "next/navigation";
 
 interface Entry {
   accountId: string;
@@ -41,24 +42,32 @@ interface CoaAccount {
 
 const TransactionPage: React.FC = () => {
   const [transaction, setTransaction] = useState<Transaction | null>(null);
+  // You may want to fetch the account details similar to transaction details for better account information display.
+  // For now, I've commented out the COA fetching logic as it's not being used.
+  // const [coa, setCoa] = useState<CoaAccount[]>([]);
+
   const pathname = usePathname();
   const pathSegments = pathname.split("/");
   const transactionId = pathSegments[pathSegments.length - 1];
   const fiscalYearId = pathSegments[pathSegments.length - 3];
   const accountId = pathSegments[pathSegments.length - 5];
-  const [coa, setCoa] = useState<CoaAccount[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
-    if (!transactionId || typeof transactionId !== "string") {
+    if (!transactionId) {
       return;
     }
 
     const transactionRef = doc(db, "transactions", transactionId);
 
-    const unsubscribe = onSnapshot(transactionRef, (doc) => {
-      if (doc.exists()) {
-        const data = doc.data();
-        setTransaction(data as Transaction); // Assuming data is correctly structured
+    const unsubscribe = onSnapshot(transactionRef, (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        setTransaction({
+          id: docSnapshot.id,
+          entries: docSnapshot.data().entries || [],
+          date: docSnapshot.data().date || "",
+          proofFileURL: docSnapshot.data().proofFileURL || "",
+        });
       }
     });
 
@@ -67,55 +76,42 @@ const TransactionPage: React.FC = () => {
     };
   }, [transactionId]);
 
-  const renderFile = (url: string) => {
-    if (!url) return null;
-
-    const isImage = /\.(jpeg|jpg|gif|png)$/.test(url);
-    const isPDF = /\.pdf$/.test(url);
-
-    if (isImage) {
-      return (
-        <Box
-          component="img"
-          src={url}
-          alt="Uploaded File"
-          sx={{ maxWidth: "100%" }}
-        />
-      );
-    } else if (isPDF) {
-      return (
-        <Link href={url} target="_blank" rel="noopener noreferrer">
-          View PDF
-        </Link>
-      );
-    }
-  };
-
   return (
-    <div>
-      <Typography variant="h5">Transaction Details</Typography>
+    <Box sx={{ padding: 3 }}>
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => router.push(`/accounting/${accountId}/`)}
+        sx={{ position: "absolute", top: 16, left: `calc(240px + 16px)` }}
+      >
+        Back
+      </Button>
+      <Typography variant="h5" gutterBottom>
+        Transaktionsdetaljer
+      </Typography>
       {transaction ? (
-        <div>
+        <>
           <Typography>ID: {transaction.id}</Typography>
           <Typography>
-            Date: {new Date(transaction.date).toLocaleDateString()}
+            Datum: {new Date(transaction.date).toLocaleDateString()}
           </Typography>
 
-          <TableContainer component={Paper}>
+          <TableContainer component={Paper} sx={{ my: 2 }}>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Account ID</TableCell>
-                  <TableCell>Counter Account ID</TableCell>
-                  <TableCell>Amount</TableCell>
-                  <TableCell>Description</TableCell>
+                  <TableCell>Typ</TableCell>
+                  <TableCell>Kontonummer</TableCell>
+                  <TableCell>Motkonto</TableCell>
+                  <TableCell>Belopp</TableCell>
+                  <TableCell>Beskrivning</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {transaction.entries.map((entry, index) => (
                   <TableRow key={index}>
-                    <TableCell>{entry.type}</TableCell>
+                    <TableCell>
+                      {entry.type === "debit" ? "Debet" : "Kredit"}
+                    </TableCell>
                     <TableCell>{entry.accountId}</TableCell>
                     <TableCell>{entry.counterAccountId}</TableCell>
                     <TableCell>{entry.amount}</TableCell>
@@ -134,7 +130,7 @@ const TransactionPage: React.FC = () => {
                 height: "desiredHeight",
               }}
             >
-              <Typography variant="h6">Proof of Transaction</Typography>
+              <Typography variant="h6">Transaktionsbevis</Typography>
               <Box
                 component="img"
                 src={transaction.proofFileURL}
@@ -143,19 +139,11 @@ const TransactionPage: React.FC = () => {
               />
             </Box>
           )}
-        </div>
+        </>
       ) : (
-        <Typography>Loading...</Typography>
+        <Typography>Laddar...</Typography>
       )}
-      <Link
-        href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}`}
-        passHref
-      >
-        <Button variant="contained" color="primary">
-          Back to Fiscal Year
-        </Button>
-      </Link>
-    </div>
+    </Box>
   );
 };
 

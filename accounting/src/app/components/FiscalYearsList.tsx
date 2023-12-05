@@ -18,6 +18,7 @@ export interface FiscalYear {
   firestoreId: string;
   startDate: string;
   endDate: string;
+  isClosed: boolean; // Added property to indicate closed status
 }
 
 const FiscalYearsList: React.FC = () => {
@@ -52,10 +53,9 @@ const FiscalYearsList: React.FC = () => {
           firestoreId: doc.id,
           startDate: data.fiscalYearSpan?.start.toDate().toLocaleDateString(),
           endDate: data.fiscalYearSpan?.end.toDate().toLocaleDateString(),
+          isClosed: data.isClosed || false, // Assume 'isClosed' is a boolean field in your document
         });
       });
-      console.log("Querysnapshot: " + querySnapshot);
-      console.log("itemsArray: " + itemsArray);
 
       setFiscalYears(itemsArray);
     });
@@ -65,9 +65,8 @@ const FiscalYearsList: React.FC = () => {
 
   return (
     <div style={{ margin: "1rem" }}>
-      <h1 style={{ marginBottom: "0.5rem" }}>List of fiscal years</h1>
       <List component="nav" aria-label="fiscal years">
-        {fiscalYears.map((fiscalYear: FiscalYear, index) => (
+        {fiscalYears.map((fiscalYear: FiscalYear) => (
           <React.Fragment key={fiscalYear.firestoreId}>
             <ListItem
               button
@@ -79,9 +78,10 @@ const FiscalYearsList: React.FC = () => {
               </ListItemIcon>
               <ListItemText
                 primary={`${fiscalYear.startDate} - ${fiscalYear.endDate}`}
+                secondary={fiscalYear.isClosed ? "Stängd" : ""}
               />
             </ListItem>
-            {index < fiscalYears.length - 1 && <Divider />}
+            <Divider />
           </React.Fragment>
         ))}
       </List>

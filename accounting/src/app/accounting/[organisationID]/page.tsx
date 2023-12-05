@@ -51,7 +51,7 @@ const OrganisationPage: React.FC = () => {
   if (!organisation) {
     return (
       <Container>
-        <Typography>Account not found</Typography>
+        <Typography>Konto hittades inte</Typography>
       </Container>
     );
   }
@@ -71,53 +71,52 @@ const OrganisationPage: React.FC = () => {
       >
         Navigation items
       </Drawer>
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => router.push(`/accounting/`)}
+        sx={{ position: "absolute", top: 16, left: `calc(240px + 16px)` }}
+      >
+        Back
+      </Button>
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <Box sx={{ flexGrow: 1, pt: 3 }}>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => router.push(`/accounting/`)}
-            sx={{ position: "absolute", top: 16, left: `calc(240px + 16px)` }}
-          >
-            Back
-          </Button>
-          <Typography
-            variant="h4"
-            noWrap
-            component="div"
-            sx={{ textAlign: "center", mb: 2, mt: 1 }}
-          >
-            {organisation ? organisation.name : "Loading..."}
-          </Typography>
+        <Typography
+          variant="h4"
+          noWrap
+          component="div"
+          sx={{ textAlign: "center", mb: 2, mt: 1 }}
+        >
+          {organisation ? organisation.name : "Laddar..."}
+        </Typography>
 
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Card sx={{ p: 2 }}>
-                <Typography variant="h5">{organisation?.name}</Typography>
-                <Typography variant="body1">
-                  Accounting plan: {organisation?.accountingPlan}
-                </Typography>
-              </Card>
-            </Grid>
-            <Grid item xs={12}>
-              <Card sx={{ p: 2 }}>
-                <Typography variant="h5" component="h2">
-                  Fiscal years
-                </Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<AddCircleOutlineIcon />}
-                  component={Link}
-                  href={`/accounting/${organisation?.id}/fiscalYears/new`}
-                  sx={{ mt: 2 }}
-                >
-                  Create a new fiscal year book
-                </Button>
-              </Card>
-              <FiscalYearsList />
-            </Grid>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Card sx={{ p: 2 }}>
+              <Typography variant="h5">{organisation?.name}</Typography>
+              <Typography variant="body1">
+                Bokföringsplan: {organisation?.accountingPlan}
+              </Typography>
+            </Card>
           </Grid>
-        </Box>
+          <Grid item xs={12}>
+            <Card sx={{ p: 2 }}>
+              <Typography variant="h5" component="h2">
+                Räkenskapsår
+              </Typography>
+              {/* FiscalYearsList should now include logic to display "Stängd" next to closed fiscal years. */}
+              <FiscalYearsList />
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AddCircleOutlineIcon />}
+                component={Link}
+                href={`/accounting/${organisation?.id}/fiscalYears/new`}
+                sx={{ mt: 2 }}
+              >
+                Skapa nytt räkenskapsår
+              </Button>
+            </Card>
+          </Grid>
+        </Grid>
       </Box>
     </Box>
   );

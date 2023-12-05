@@ -11,6 +11,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../../db/firebase"; // Adjust the import path accordingly
 import {
+  Box,
   Button,
   Container,
   TextField,
@@ -242,18 +243,10 @@ const ChartOfAccountsPage = () => {
     }
   };
 
-  const onAccountCodeChange = (index: number, newCode: string) => {
-    const updatedAccounts = [...accounts];
-    updatedAccounts[index] = { ...updatedAccounts[index], code: newCode };
-    setAccounts(updatedAccounts);
-  };
-
   return (
     <StyledContainer>
       <FormControl fullWidth>
-        <InputLabel id="default-template-select-label">
-          Select a Template
-        </InputLabel>
+        <InputLabel id="default-template-select-label">Välj en mall</InputLabel>
         <Select
           labelId="default-template-select-label"
           value={selectedTemplate ? selectedTemplate.id : ""}
@@ -351,20 +344,29 @@ const ChartOfAccountsPage = () => {
           </TableRow>
         </TableBody>
       </Table>
-      <Button variant="contained" color="primary" onClick={handleSaveTemplate}>
-        Save Template
-      </Button>
-      <Button variant="contained" color="primary" onClick={handleSaveAccount}>
-        Save Changes to Account
-      </Button>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleFileButtonClick}
-        style={{ margin: "20px 0" }}
+      <Box
+        sx={{ display: "flex", justifyContent: "space-between", mt: 2, mb: 2 }}
       >
-        Upload CSV
-      </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleSaveTemplate}
+        >
+          Spara mall
+        </Button>
+        <Button variant="contained" color="primary" onClick={handleSaveAccount}>
+          Spara ändringar till konto
+        </Button>
+      </Box>
+      <Box sx={{ display: "flex", justifyContent: "flex-start" }}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleFileButtonClick}
+        >
+          Ladda upp CSV
+        </Button>
+      </Box>
       <input
         type="file"
         ref={fileInputRef}

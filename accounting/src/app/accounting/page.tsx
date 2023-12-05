@@ -207,7 +207,7 @@ const OrganisationsPage: React.FC = () => {
             </Typography>
             <form onSubmit={handleCreateAccount}>
               <TextField
-                label="Enter name of organisation"
+                label="Namnge din organisation"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 margin="normal"

@@ -1,10 +1,12 @@
 "use client";
-import { useEffect, useState } from "react";
+import { Key, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { doc, setDoc, collection, getDoc } from "firebase/firestore";
 import { db } from "../../../../../../db/firebase";
 import {
   Button,
+  Box,
+  Typography,
   TextField,
   Table,
   TableBody,
@@ -20,7 +22,7 @@ import {
 import { runTransaction, increment } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../../../../../../db/firebase"; // Adjust this import path to where your Firebase storage is initialized
-import AccountCodeSearch from "@/app/components/AccountCodeSearch";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 interface Entry {
   accountId: string;
@@ -37,6 +39,22 @@ interface Transaction {
   fiscalYearId: string;
   proofFileURL: string;
 }
+
+const Input = styled("input")({
+  display: "none",
+});
+
+const drawerWidth = 240;
+
+const StyledContainer = styled(Container)(({ theme }) => ({
+  padding: theme.spacing(4),
+  marginLeft: `${drawerWidth}px`, // Drawer width
+  marginRight: "auto", // Automatically adjust the right margin
+  width: `calc(100% - ${drawerWidth}px)`, // Adjust the width of the container
+  display: "flex",
+  flexDirection: "column", // Stack children vertically
+  alignItems: "center", // Center children horizontally
+}));
 
 const NewTransactionPage: React.FC = () => {
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -85,6 +103,22 @@ const NewTransactionPage: React.FC = () => {
   useEffect(() => {
     console.log(accountCodes);
   }, [accountCodes]);
+
+  const handleEntryChange = (
+    index: number,
+    field: keyof Entry,
+    newValue: any
+  ) => {
+    // Check if newValue is an object with a 'code' property, otherwise use newValue as is
+    const value =
+      newValue &&
+      typeof newValue === "object" &&
+      newValue.hasOwnProperty("code")
+        ? newValue.code
+        : newValue;
+    // Use the existing logic to update the entry
+    handleNewEntryChange(index, field, value);
+  };
 
   const handleAddEntry = () => {
     if (!newEntry.accountId || newEntry.amount <= 0) {
@@ -279,7 +313,7 @@ const NewTransactionPage: React.FC = () => {
     });
   };
 
-  const renderEntryRow = (entry: any, index: any) => (
+  const renderEntryRow = (entry: any, index: any | undefined) => (
     <TableRow key={index}>
       <TableCell>
         <Autocomplete
@@ -291,13 +325,9 @@ const NewTransactionPage: React.FC = () => {
               : `${option.code} - ${option.name}`
           }
           value={entry.accountId}
-          onChange={(event, newValue) => {
-            if (typeof newValue === "string") {
-              handleNewEntryChange(index, "accountId", newValue);
-            } else if (newValue) {
-              handleNewEntryChange(index, "accountId", newValue.code);
-            }
-          }}
+          onChange={(event, newValue) =>
+            handleEntryChange(index, "accountId", newValue)
+          }
           renderInput={(params) => (
             <TextField {...params} label="Account Code" />
           )}
@@ -313,13 +343,9 @@ const NewTransactionPage: React.FC = () => {
               : `${option.code} - ${option.name}`
           }
           value={entry.counterAccountId}
-          onChange={(event, newValue) => {
-            if (typeof newValue === "string") {
-              handleNewEntryChange(index, "counterAccountId", newValue);
-            } else if (newValue) {
-              handleNewEntryChange(index, "counterAccountId", newValue.code);
-            }
-          }}
+          onChange={(event, newValue) =>
+            handleEntryChange(index, "counterAccountId", newValue)
+          }
           renderInput={(params) => (
             <TextField {...params} label="Counter Account Code" />
           )}
@@ -329,7 +355,7 @@ const NewTransactionPage: React.FC = () => {
         <TextField
           select
           value={entry.type}
-          onChange={(e) => handleNewEntryChange(index, "type", e.target.value)}
+          onChange={(e) => handleEntryChange(index, "type", e.target.value)}
           SelectProps={{ native: true }}
           size="small"
         >
@@ -341,13 +367,7 @@ const NewTransactionPage: React.FC = () => {
         <TextField
           type="number"
           value={entry.amount}
-          onChange={(e) =>
-            handleNewEntryChange(
-              index,
-              "amount",
-              parseFloat(e.target.value) || 0
-            )
-          }
+          onChange={(e) => handleEntryChange(index, "amount", e.target.value)}
           size="small"
         />
       </TableCell>
@@ -355,7 +375,7 @@ const NewTransactionPage: React.FC = () => {
         <TextField
           value={entry.description}
           onChange={(e) =>
-            handleNewEntryChange(index, "description", e.target.value)
+            handleEntryChange(index, "description", e.target.value)
           }
           size="small"
         />
@@ -368,7 +388,7 @@ const NewTransactionPage: React.FC = () => {
             color="primary"
             disabled={entries.length > 0 && isTransactionBalanced()}
           >
-            Balance Entry
+            Balansera rad
           </Button>
         )}
       </TableCell>
@@ -385,57 +405,93 @@ const NewTransactionPage: React.FC = () => {
     return totalDebits === totalCredits;
   };
 
-  const StyledContainer = styled(Container)({
-    padding: "32px",
-    marginLeft: "14vw", // Adjust this value to match your navbar's height
-  });
-
   return (
     <StyledContainer>
-      <h1>New Transaction</h1>
-      <div>
-        <p>Total Debits: {totalDebits}</p>
-        <p>Total Credits: {totalCredits}</p>
-      </div>
-      <TableContainer component={Paper}>
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() =>
+          router.push(`/accounting/${accountId}/fiscalYears/${fiscalYearId}/`)
+        }
+        sx={{ position: "absolute", top: 16, left: `calc(240px + 16px)` }}
+      >
+        Tillbaka
+      </Button>
+      <Typography variant="h4" gutterBottom>
+        Ny transaktion
+      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+          width: "100%",
+        }}
+      >
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="body1">
+            Totalt debiterat: {totalDebits}
+          </Typography>
+          <Typography variant="body1">
+            Totalt krediterat: {totalCredits}
+          </Typography>
+          <Typography variant="body1">
+            Saldo: {totalDebits - totalCredits}
+          </Typography>
+        </Box>
+        <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+          <label htmlFor="contained-button-file">
+            <Input
+              accept=".pdf,image/*"
+              id="contained-button-file"
+              multiple
+              type="file"
+              onChange={handleFileChange}
+            />
+            <Button
+              variant="contained"
+              component="span"
+              sx={{ width: "auto", height: 36 }}
+            >
+              Ladda upp fil
+            </Button>
+          </label>
+          {proofFileName && (
+            <Typography sx={{ ml: 2 }}>{proofFileName}</Typography>
+          )}
+        </Box>
+      </Box>
+      <TableContainer component={Paper} sx={{ my: 2 }}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Account ID</TableCell>
-              <TableCell>Counter Account ID</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Amount</TableCell>
-              <TableCell>Description</TableCell>
+              <TableCell>Kontonummer</TableCell>
+              <TableCell>Motkonto</TableCell>
+              <TableCell>Typ</TableCell>
+              <TableCell>Belopp</TableCell>
+              <TableCell>Beskrivning</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {entries.map((entry, index) => renderEntryRow(entry, index))}
             {renderEntryRow(newEntry, entries.length)}
-            <div>
-              <input
-                type="file"
-                onChange={handleFileChange}
-                accept=".pdf,image/*" // Accept only images and PDF
-              />
-              {proofFileName ? (
-                <p>File selected: {proofFileName}</p>
-              ) : (
-                <p>No file selected</p>
-              )}
-            </div>
           </TableBody>
         </Table>
       </TableContainer>
-      <Button onClick={handleAddEntry} variant="contained" color="primary">
-        Add Entry
-      </Button>
-      <Button
-        onClick={validateAndSaveTransaction}
-        variant="contained"
-        color="primary"
-      >
-        Save Transaction
-      </Button>
+      <Box sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}>
+        <Button onClick={handleAddEntry} variant="contained" color="primary">
+          Lägg till rad
+        </Button>
+      </Box>
+      <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+        <Button
+          onClick={validateAndSaveTransaction}
+          variant="contained"
+          color="primary"
+        >
+          Spara transaktion
+        </Button>
+      </Box>
     </StyledContainer>
   );
 };

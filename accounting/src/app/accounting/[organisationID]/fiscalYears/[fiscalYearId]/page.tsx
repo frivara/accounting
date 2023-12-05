@@ -12,8 +12,7 @@ import {
 import { db } from "../../../../db/firebase";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-
-import ExpandMoreIcon from "@mui/material/Icon";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   Box,
   Grid,
@@ -23,6 +22,10 @@ import {
   AccordionSummary,
   AccordionDetails,
   Link as MuiLink,
+  Card,
+  CardContent,
+  CardActions,
+  Container,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
@@ -44,6 +47,8 @@ interface Entry {
 interface FinalBalances {
   [accountId: string]: number;
 }
+
+const drawerWidth = 240;
 
 const FiscalYearPage: React.FC = () => {
   const [fiscalYear, setFiscalYear] = useState<any>(null);
@@ -175,95 +180,104 @@ const FiscalYearPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      {" "}
-      <Grid container spacing={2}>
-        {" "}
-        <Grid item xs={12}>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => router.push(`/accounting/${accountId}/`)}
-            sx={{ mb: 2 }} // Add mb (margin bottom)
-          >
-            Back
-          </Button>
-          <Typography variant="h4" gutterBottom>
-            {" "}
-            Fiscal Year
+    <Container
+      style={{ paddingLeft: drawerWidth + 20, paddingRight: 20, marginTop: 20 }}
+    >
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => router.push(`/accounting/${accountId}/`)}
+        sx={{ position: "absolute", top: 16, left: `calc(240px + 16px)` }}
+      >
+        Back
+      </Button>
+      <Typography variant="h4" gutterBottom>
+        Räkenskapsår
+      </Typography>
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <Typography variant="body1" gutterBottom>
+            Startdatum: {fiscalYear?.startDate}
           </Typography>
           <Typography variant="body1" gutterBottom>
-            Start date: {fiscalYear?.startDate}
+            Slutdatum: {fiscalYear?.endDate}
           </Typography>
-          <Typography variant="body1" gutterBottom>
-            End date: {fiscalYear?.endDate}
-          </Typography>
-        </Grid>
-        <Grid item xs={12}>
-          {!isYearClosed && (
-            <MuiLink
-              href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}/transactions/new`}
-              underline="hover"
-            >
-              <Button variant="contained" color="primary" sx={{ mb: 2 }}>
-                {" "}
-                Create New Transaction
-              </Button>
-            </MuiLink>
-          )}
-        </Grid>
-        <Grid item xs={12}>
+        </CardContent>
+      </Card>
+      <Box
+        sx={{
+          maxHeight: "50vh",
+          overflowY: "auto",
+          mb: 2,
+          backgroundColor: "#f5f5f5",
+          borderRadius: 1,
+          border: "1px solid #e0e0e0",
+          padding: 2,
+        }}
+      >
+        <Grid container spacing={2}>
+          {/* Transaction Accordion List */}
           {transactions.map((transaction) => (
-            <Accordion
-              key={transaction.id}
-              expanded={expandedTransactionId === transaction.id}
-              onChange={() => handleExpandClick(transaction.id)}
-              sx={{ mb: 1 }}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography>
-                  {transaction.entries[0].description} - {transaction.date}
-                </Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Typography>ID: {transaction.id}</Typography>
-                {transaction.entries.map((entry, index) => (
-                  <Box key={index} sx={{ my: 1 }}>
-                    {" "}
-                    <Typography>
-                      {entry.type}: {entry.amount}
-                    </Typography>
-                    <Typography>Account ID: {entry.accountId}</Typography>
-                    <Typography>
-                      Counter Account ID: {entry.counterAccountId}
-                    </Typography>
-                  </Box>
-                ))}
-                <Link
-                  href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}/transactions/${transaction.id}`}
-                  passHref
-                >
-                  <Button variant="contained" color="primary">
-                    View Transaction
-                  </Button>
-                </Link>
-              </AccordionDetails>
-            </Accordion>
+            <Grid item xs={12} key={transaction.id}>
+              <Accordion
+                expanded={expandedTransactionId === transaction.id}
+                onChange={() => handleExpandClick(transaction.id)}
+              >
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography>
+                    {transaction.entries[0].description} - {transaction.date}
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Typography>ID: {transaction.id}</Typography>
+                  {/* Transaction Entries */}
+                  {transaction.entries.map((entry, index) => (
+                    <Box key={index} sx={{ my: 1 }}>
+                      <Typography>
+                        {entry.type}: {entry.amount}
+                      </Typography>
+                      <Typography>Kontonummer: {entry.accountId}</Typography>
+                      <Typography>
+                        Motkonto: {entry.counterAccountId}
+                      </Typography>
+                    </Box>
+                  ))}
+                  <Link
+                    href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}/transactions/${transaction.id}`}
+                    passHref
+                  >
+                    <Button variant="contained" color="primary">
+                      Transaktionsdetaljer
+                    </Button>
+                  </Link>
+                </AccordionDetails>
+              </Accordion>
+            </Grid>
           ))}
         </Grid>
+      </Box>
+      {!isYearClosed && (
+        <MuiLink
+          href={`/accounting/${accountId}/fiscalYears/${fiscalYearId}/transactions/new`}
+          underline="hover"
+        >
+          <Button variant="contained" color="primary">
+            Lägg till ny transaktion
+          </Button>
+        </MuiLink>
+      )}
+      {!isYearClosed && (
         <Grid item xs={12}>
-          {!isYearClosed && (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={closeFiscalYear}
-              sx={{ mt: 2 }}
-            >
-              Close Fiscal Year
-            </Button>
-          )}
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={closeFiscalYear}
+            sx={{ mt: 2 }}
+          >
+            Stäng räkenskapsåret
+          </Button>
         </Grid>
-      </Grid>
-    </Box>
+      )}
+    </Container>
   );
 };
 
