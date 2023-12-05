@@ -25,6 +25,9 @@ import {
   FormControl,
   InputLabel,
   ListSubheader,
+  Typography,
+  Paper,
+  TableContainer,
 } from "@mui/material";
 import { styled } from "@mui/system";
 import Papa from "papaparse";
@@ -37,7 +40,7 @@ interface CoaAccount {
 }
 
 const StyledContainer = styled(Container)({
-  padding: "32px",
+  padding: "10px",
   marginLeft: "15vw",
 });
 
@@ -209,7 +212,6 @@ const ChartOfAccountsPage = () => {
 
   const saveTemplateToDatabase = async (template: any) => {
     try {
-      // Replace with your Firebase collection path
       const docRef = await addDoc(
         collection(db, "chartOfAccountsTemplates"),
         template
@@ -245,120 +247,160 @@ const ChartOfAccountsPage = () => {
 
   return (
     <StyledContainer>
-      <FormControl fullWidth>
-        <InputLabel id="default-template-select-label">Välj en mall</InputLabel>
-        <Select
-          labelId="default-template-select-label"
-          value={selectedTemplate ? selectedTemplate.id : ""}
-          label="Select a Template"
-          onChange={(e) => handleTemplateSelection(e.target.value)}
-        >
-          <ListSubheader>Default Templates</ListSubheader>
-          {defaultTemplates.map((template) => (
-            <MenuItem key={template.id} value={template.id}>
-              {template.templateName}
-            </MenuItem>
-          ))}
-          <ListSubheader>Custom Templates</ListSubheader>
-          {customTemplates.map((template) => (
-            <MenuItem key={template.id} value={template.id}>
-              {template.templateName}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      <TextField
-        label="Template Name"
-        value={templateName}
-        onChange={(e) => setTemplateName(e.target.value)}
-      />
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Account Code</TableCell>
-            <TableCell>Account Name</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {accounts.map((account, index) => (
-            <TableRow key={index}>
-              <TableCell>
-                <TextField
-                  value={account.code}
-                  onChange={(e) =>
-                    handleAccountChange(index, "code", e.target.value)
-                  }
-                  error={!isCodeValid && account.code.length > 0}
-                  helperText={
-                    !isCodeValid && account.code.length > 0
-                      ? "Code must be exactly 4 characters"
-                      : ""
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <TextField
-                  value={account.name}
-                  onChange={(e) =>
-                    handleAccountChange(index, "name", e.target.value)
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <Button onClick={() => handleDeleteAccount(index)}>
-                  <DeleteIcon />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-          <TableRow>
-            <TableCell>
-              <AccountCodeSearch
-                currentAccountId={newAccount.code}
-                onSelectAccount={(selectedAccount: {
-                  code: string;
-                  name: any;
-                }) => {
-                  if (selectedAccount) {
-                    const code = selectedAccount.code.split(" - ")[0]; // Extract just the code
-                    setNewAccount((prev) => ({
-                      ...prev,
-                      code: code, // Set only the code part
-                      name: selectedAccount.name, // This should already be just the name
-                    }));
-                  }
-                }}
-              />
-            </TableCell>
+      <Typography variant="h4" sx={{ mb: 2 }}>
+        Kontoplaner
+      </Typography>
 
-            <TableCell>
-              <TextField
-                placeholder="New Account Name"
-                value={newAccount.name}
-                onChange={(e) => handleNewAccountChange("name", e.target.value)}
-              />
-            </TableCell>
-            <TableCell>
-              <Button onClick={handleAddAccount}>Add Account</Button>
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h6" gutterBottom>
+          Välj en kontoplanmall
+        </Typography>
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel id="default-template-select-label">
+            Välj en mall
+          </InputLabel>
+          <Select
+            labelId="default-template-select-label"
+            value={selectedTemplate ? selectedTemplate.id : ""}
+            label="Välj en mall"
+            onChange={(e) => handleTemplateSelection(e.target.value)}
+          >
+            <ListSubheader>Låsta kontoplaner</ListSubheader>
+            {defaultTemplates.map((template) => (
+              <MenuItem key={template.id} value={template.id}>
+                {template.templateName}
+              </MenuItem>
+            ))}
+            <ListSubheader>Mina kontoplaner</ListSubheader>
+            {customTemplates.map((template) => (
+              <MenuItem key={template.id} value={template.id}>
+                {template.templateName}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h6" gutterBottom>
+          Skapa eller redigera kontoplan
+        </Typography>
+        <TextField
+          label="Namn på mallen"
+          value={templateName}
+          onChange={(e) => setTemplateName(e.target.value)}
+          fullWidth
+          sx={{ mb: 2 }}
+        />
+
+        <Box
+          sx={{
+            borderBottom: "1px solid #e0e0e0",
+            backgroundColor: "#f5f5f5",
+          }}
+        >
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell style={{ width: "30%" }}>Kontonummer</TableCell>
+                <TableCell style={{ width: "39%" }}>Kontonamn</TableCell>
+              </TableRow>
+            </TableHead>
+          </Table>
+        </Box>
+
+        <TableContainer
+          component={Paper}
+          sx={{
+            maxHeight: "200px",
+            overflowY: "auto",
+          }}
+        >
+          <Table stickyHeader aria-label="sticky table">
+            <TableBody>
+              {accounts.map((account, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <TextField
+                      value={account.code}
+                      onChange={(e) =>
+                        handleAccountChange(index, "code", e.target.value)
+                      }
+                      error={!isCodeValid && account.code.length > 0}
+                      helperText={
+                        !isCodeValid && account.code.length > 0
+                          ? "Koden måste vara exakt 4 tecken lång"
+                          : ""
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <TextField
+                      value={account.name}
+                      onChange={(e) =>
+                        handleAccountChange(index, "name", e.target.value)
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Button onClick={() => handleDeleteAccount(index)}>
+                      <DeleteIcon />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              <TableRow>
+                <TableCell>
+                  <AccountCodeSearch
+                    currentAccountId={newAccount.code}
+                    onSelectAccount={(selectedAccount: {
+                      code: string;
+                      name: string;
+                    }) => {
+                      if (selectedAccount) {
+                        setNewAccount({
+                          ...newAccount,
+                          code: selectedAccount.code,
+                          name: selectedAccount.name,
+                        });
+                      }
+                    }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <TextField
+                    placeholder="Kontonamn"
+                    value={newAccount.name}
+                    onChange={(e) =>
+                      handleNewAccountChange("name", e.target.value)
+                    }
+                  />
+                </TableCell>
+                <TableCell>
+                  <Button onClick={handleAddAccount}>Lägg till konto</Button>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+
       <Box
-        sx={{ display: "flex", justifyContent: "space-between", mt: 2, mb: 2 }}
+        sx={{ display: "flex", justifyContent: "space-between", mt: 4, mb: 4 }}
       >
         <Button
           variant="contained"
           color="primary"
           onClick={handleSaveTemplate}
         >
-          Spara mall
+          Spara som ny mall
         </Button>
         <Button variant="contained" color="primary" onClick={handleSaveAccount}>
-          Spara ändringar till konto
+          Spara ändringar
         </Button>
       </Box>
-      <Box sx={{ display: "flex", justifyContent: "flex-start" }}>
+
+      <Box sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}>
         <Button
           variant="contained"
           color="primary"
@@ -372,7 +414,7 @@ const ChartOfAccountsPage = () => {
         ref={fileInputRef}
         accept=".csv"
         onChange={handleFileUpload}
-        style={{ display: "none" }} // Hide the actual file input
+        style={{ display: "none" }}
       />
     </StyledContainer>
   );

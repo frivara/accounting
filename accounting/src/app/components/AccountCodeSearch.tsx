@@ -59,7 +59,7 @@ const AccountCodeSearch = ({
       }
       style={{ width: 300 }}
       renderInput={(params) => (
-        <TextField {...params} label="Account Code" variant="outlined" />
+        <TextField {...params} label="Kontonummer" variant="outlined" />
       )}
       onInputChange={(event, newInputValue) => {
         setSearchTerm(newInputValue);

@@ -34,12 +34,9 @@ const HomePage = () => {
             Bokföring 2.0 - The ReBokföringengeance ft. Tails
           </Typography>
           <Typography variant="h4" gutterBottom>
-            Welcome, {user}!
+            Välkommen hit, {user}!
           </Typography>
-          <Typography variant="h5" gutterBottom>
-            Please use the navbar to navigate this web app and have a wonderful
-            day!
-          </Typography>
+
           <Typography variant="h6" gutterBottom>
             Developer&apos;s note: Perhaps put the organisation/fiscal year that
             the user last worked on here as a link?
