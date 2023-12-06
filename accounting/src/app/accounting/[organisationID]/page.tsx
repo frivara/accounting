@@ -30,7 +30,7 @@ const OrganisationPage: React.FC = () => {
       return;
     }
 
-    const accountRef = doc(db, "accounts", organisationId);
+    const accountRef = doc(db, "organisations", organisationId);
 
     const unsubscribe = onSnapshot(accountRef, (doc) => {
       if (doc.exists()) {
@@ -102,7 +102,6 @@ const OrganisationPage: React.FC = () => {
               <Typography variant="h5" component="h2">
                 Räkenskapsår
               </Typography>
-              {/* FiscalYearsList should now include logic to display "Stängd" next to closed fiscal years. */}
               <FiscalYearsList />
               <Button
                 variant="contained"

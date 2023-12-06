@@ -1,14 +1,12 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where,
-  doc,
-  updateDoc,
-} from "firebase/firestore";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useContext,
+  useCallback,
+} from "react";
+import { collection, addDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "../../db/firebase"; // Adjust the import path accordingly
 import {
   Box,
@@ -33,6 +31,7 @@ import { styled } from "@mui/system";
 import Papa from "papaparse";
 import AccountCodeSearch from "@/app/components/AccountCodeSearch";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { MyContext } from "@/app/helpers/context";
 
 interface CoaAccount {
   code: string;
@@ -45,57 +44,33 @@ const StyledContainer = styled(Container)({
 });
 
 const ChartOfAccountsPage = () => {
+  const { globalState, updateGlobalState } = useContext<any>(MyContext);
+  const { defaultTemplates, customTemplates } =
+    globalState.chartOfAccountsTemplates || {
+      defaultTemplates: [],
+      customTemplates: [],
+    };
   const [accounts, setAccounts] = useState<CoaAccount[]>([]);
   const [newAccount, setNewAccount] = useState<CoaAccount>({
     code: "",
     name: "",
   });
   const [templateName, setTemplateName] = useState<string>("");
-  const [defaultTemplates, setDefaultTemplates] = useState<any[]>([]);
-  const [customTemplates, setCustomTemplates] = useState<any[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [isCodeValid, setIsCodeValid] = useState(true);
+  const [visibleAccounts, setVisibleAccounts] = useState<any>([]);
+  const [loadMore, setLoadMore] = useState(false);
+  const ITEMS_PER_PAGE = 20; // Adjust the number of items per page as needed
 
   const fileInputRef: any = useRef(null);
+
+  useEffect(() => {
+    console.log(globalState);
+  }, []);
 
   const handleFileButtonClick = () => {
     fileInputRef.current!.click();
   };
-
-  useEffect(() => {
-    const fetchDefaultTemplates = async () => {
-      const querySnapshot = await getDocs(
-        query(
-          collection(db, "chartOfAccountsTemplates"),
-          where("isDefault", "==", true)
-        )
-      );
-      const templates = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setDefaultTemplates(templates);
-    };
-
-    fetchDefaultTemplates();
-
-    const fetchCustomTemplates = async () => {
-      const userQuerySnapshot = await getDocs(
-        query(
-          collection(db, "chartOfAccountsTemplates"),
-          //where("userId", "==", userId), // Replace with actual user ID logic
-          where("isDefault", "==", false)
-        )
-      );
-      const userTemplates = userQuerySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setCustomTemplates(userTemplates);
-    };
-
-    fetchCustomTemplates();
-  }, []);
 
   const handleAccountChange = (
     index: number,
@@ -136,23 +111,33 @@ const ChartOfAccountsPage = () => {
     setNewAccount((prev) => ({ ...prev, [field]: value }));
   };
 
-  useEffect(() => {
-    console.log(newAccount);
-  }, [newAccount]);
-
   const handleAddAccount = () => {
-    if (newAccount.code.length == 4 && newAccount.name !== "") {
+    if (newAccount.code.length === 4 && newAccount.name !== "") {
       setAccounts((prev) => [...prev, newAccount]);
       setNewAccount({ code: "", name: "" }); // Reset new account fields
     }
   };
 
   const handleSaveTemplate = async () => {
-    if (accounts.some((account) => account.code.length !== 4)) {
-      alert("Cannot save: One or more account codes are invalid.");
+    // Check if the template name already exists in default templates
+    const nameExists = defaultTemplates.some(
+      (template: any) =>
+        template.templateName.toLowerCase() === templateName.toLowerCase()
+    );
+
+    if (nameExists) {
+      alert(
+        "A default template with this name already exists. Please choose a different name."
+      );
       return;
     }
 
+    if (accounts.some((account) => account.code.length !== 4)) {
+      alert("Cannot save: Account codes need to be 4 digits long.");
+      return;
+    }
+
+    // Continue with save operation if the name does not exist
     const userTemplate = {
       templateName,
       accounts,
@@ -166,6 +151,14 @@ const ChartOfAccountsPage = () => {
       );
       console.log("User template saved with ID: ", docRef.id);
       alert("Template saved successfully!");
+
+      // Update the global state with the new template
+      updateGlobalState({
+        chartOfAccountsTemplates: {
+          defaultTemplates: [...defaultTemplates], // Update accordingly
+          customTemplates: [...customTemplates, userTemplate], // Add the new user template
+        },
+      });
     } catch (error) {
       console.error("Error saving user template:", error);
       alert("Failed to save template. Please try again.");
@@ -223,27 +216,62 @@ const ChartOfAccountsPage = () => {
   };
 
   const handleTemplateSelection = (templateId: string) => {
-    // Attempt to find the template in both default and custom templates
-    let template = defaultTemplates.find((t) => t.id === templateId);
+    let template = defaultTemplates.find((t: any) => t.id === templateId);
     if (!template) {
-      template = customTemplates.find((t) => t.id === templateId);
+      template = customTemplates.find((t: any) => t.id === templateId);
     }
 
     setSelectedTemplate(template);
 
     if (template) {
-      // Clone the accounts data to avoid direct state mutation
+      setVisibleAccounts(template.accounts.slice(0, ITEMS_PER_PAGE));
+      setLoadMore(template.accounts.length > ITEMS_PER_PAGE);
       const accountsClone = template.accounts.map((account: any) => ({
         ...account,
       }));
       setAccounts(accountsClone);
       setTemplateName(template.templateName);
     } else {
-      // Reset if no template is found
       setAccounts([]);
       setTemplateName("");
     }
   };
+
+  const handleLoadMore = () => {
+    const currentLength = visibleAccounts.length;
+    const isMore = currentLength < accounts.length;
+    const nextResults = isMore
+      ? accounts.slice(currentLength, currentLength + ITEMS_PER_PAGE)
+      : [];
+    setVisibleAccounts((prevAccounts: any) => [
+      ...prevAccounts,
+      ...nextResults,
+    ]);
+    setLoadMore(accounts.length > currentLength + nextResults.length);
+  };
+
+  const observer: any = useRef();
+  const lastAccountElementRef = useCallback(
+    (node: any) => {
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && loadMore) {
+          handleLoadMore();
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [loadMore]
+  );
+
+  useEffect(() => {
+    // Cleanup observer on component unmount
+    return () => {
+      if (observer.current) {
+        observer.current.disconnect();
+      }
+    };
+  }, []);
 
   return (
     <StyledContainer>
@@ -266,13 +294,13 @@ const ChartOfAccountsPage = () => {
             onChange={(e) => handleTemplateSelection(e.target.value)}
           >
             <ListSubheader>Låsta kontoplaner</ListSubheader>
-            {defaultTemplates.map((template) => (
+            {defaultTemplates.map((template: any) => (
               <MenuItem key={template.id} value={template.id}>
                 {template.templateName}
               </MenuItem>
             ))}
             <ListSubheader>Mina kontoplaner</ListSubheader>
-            {customTemplates.map((template) => (
+            {customTemplates.map((template: any) => (
               <MenuItem key={template.id} value={template.id}>
                 {template.templateName}
               </MenuItem>
@@ -318,8 +346,15 @@ const ChartOfAccountsPage = () => {
         >
           <Table stickyHeader aria-label="sticky table">
             <TableBody>
-              {accounts.map((account, index) => (
-                <TableRow key={index}>
+              {visibleAccounts.map((account: any, index: any) => (
+                <TableRow
+                  key={index}
+                  ref={
+                    index === visibleAccounts.length - 1
+                      ? lastAccountElementRef
+                      : null
+                  }
+                >
                   <TableCell>
                     <TextField
                       value={account.code}

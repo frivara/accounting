@@ -1,7 +1,7 @@
 "use client";
-import { Key, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { doc, setDoc, collection, getDoc } from "firebase/firestore";
+import { doc, collection, getDoc } from "firebase/firestore";
 import { db } from "../../../../../../db/firebase";
 import {
   Button,
@@ -81,7 +81,7 @@ const NewTransactionPage: React.FC = () => {
   useEffect(() => {
     const fetchAccountCodes = async () => {
       // Ensure that accountId is the correct ID from the "accounts" collection
-      const accountDoc = await getDoc(doc(db, "accounts", accountId));
+      const accountDoc = await getDoc(doc(db, "organisations", accountId));
       const accountData = accountDoc.data();
       if (accountData) {
         const accountingPlanId = accountData.accountingPlan;

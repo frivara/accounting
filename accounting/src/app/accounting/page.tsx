@@ -73,7 +73,7 @@ const OrganisationsPage: React.FC = () => {
   };
 
   const getAccountById = async (id: string) => {
-    const accountDoc = await getDoc(doc(db, "accounts", id));
+    const accountDoc = await getDoc(doc(db, "organisations", id));
     const account = accountDoc.data();
 
     return account;
@@ -95,7 +95,7 @@ const OrganisationsPage: React.FC = () => {
         accountingPlan: selectedTemplateId, // Use the selected template ID here
       };
 
-      await addDoc(collection(db, "accounts"), newAccount);
+      await addDoc(collection(db, "organisations"), newAccount);
 
       setName("");
       setSelectedTemplateId(null); // Reset the selected template ID
@@ -115,7 +115,7 @@ const OrganisationsPage: React.FC = () => {
 
   const handleDeleteAccount = async () => {
     if (accountToDelete) {
-      await deleteDoc(doc(db, "accounts", accountToDelete));
+      await deleteDoc(doc(db, "organisations", accountToDelete));
       // Refresh the list or handle the UI update as needed
       closeDeleteDialog();
     }
@@ -124,7 +124,7 @@ const OrganisationsPage: React.FC = () => {
   // Read items from database
 
   useEffect(() => {
-    const accountQuery = query(collection(db, "accounts"));
+    const accountQuery = query(collection(db, "organisations"));
     // calling the function below "unsubscribe" refers to disconnecting from the database after fetching the data needed
     const unsubscribe = onSnapshot(accountQuery, (querySnapshot) => {
       let itemsArray: any = [];

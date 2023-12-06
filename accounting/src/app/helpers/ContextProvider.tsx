@@ -1,11 +1,25 @@
 // ContextProvider.tsx
-import React, { ReactNode, useState, FC } from "react";
+"use client";
+import React, { ReactNode, useState, useEffect, FC } from "react";
+import { db } from "../db/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { MyContext } from "./context";
+
+interface CoaTemplate {
+  id: string;
+  templateName: string;
+  isDefault: boolean;
+  accounts: any[]; // Define this type more specifically based on your data structure
+}
 
 interface GlobalState {
   user?: {
     name: string;
     email: string;
+  };
+  chartOfAccountsTemplates?: {
+    defaultTemplates: CoaTemplate[];
+    customTemplates: CoaTemplate[];
   };
 }
 
@@ -13,22 +27,67 @@ interface ContextProviderProps {
   children: ReactNode;
 }
 
-interface ContextValue {
-  globalState: GlobalState;
-  updateGlobalState: (newState: Partial<GlobalState>) => void;
-}
-
 const ContextProvider: FC<ContextProviderProps> = ({ children }) => {
-  const [globalState, setGlobalState] = useState<GlobalState>({});
+  const [globalState, setGlobalState] = useState<any>({
+    chartOfAccountsTemplates: {
+      defaultTemplates: [],
+      customTemplates: [],
+    },
+  });
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      const defaultTemplatesQuery = query(
+        collection(db, "chartOfAccountsTemplates"),
+        where("isDefault", "==", true)
+      );
+
+      const customTemplatesQuery = query(
+        collection(db, "chartOfAccountsTemplates"),
+        where("isDefault", "==", false)
+      );
+
+      try {
+        const [defaultTemplatesSnapshot, customTemplatesSnapshot] =
+          await Promise.all([
+            getDocs(defaultTemplatesQuery),
+            getDocs(customTemplatesQuery),
+          ]);
+
+        const defaultTemplates = defaultTemplatesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        const customTemplates = customTemplatesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setGlobalState((prevState: any) => ({
+          ...prevState,
+          chartOfAccountsTemplates: {
+            defaultTemplates,
+            customTemplates,
+          },
+        }));
+      } catch (error) {
+        console.error("Error fetching templates:", error);
+        // Handle error appropriately
+      }
+    };
+
+    fetchTemplates();
+  }, []);
 
   const updateGlobalState = (newState: Partial<GlobalState>) => {
-    setGlobalState((prevState) => ({
+    setGlobalState((prevState: any) => ({
       ...prevState,
       ...newState,
     }));
   };
 
-  const contextValue: ContextValue = {
+  const contextValue = {
     globalState,
     updateGlobalState,
   };

@@ -172,7 +172,7 @@ const FiscalYearPage: React.FC = () => {
       // Update the state to reflect the closed status
       setIsYearClosed(true);
 
-      alert("The fiscal year has been closed and a new year has been created.");
+      alert("The fiscal year has been closed.");
     } catch (error) {
       console.error("Error closing fiscal year:", error);
       alert("Failed to close the fiscal year. Please try again.");
