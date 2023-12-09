@@ -7,7 +7,6 @@ import {
   getDoc,
   onSnapshot,
   doc,
-  deleteDoc,
   getDocs,
   query,
 } from "firebase/firestore";
@@ -21,19 +20,10 @@ import {
   ListItem,
   ListItemText,
   Typography,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
   Grid,
-  Paper,
   Card,
-  CardActions,
   CardContent,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
 
 export interface Account {
   id: string;
@@ -53,8 +43,6 @@ const OrganisationsPage: React.FC = () => {
   );
 
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
 
   const handleViewAccount = async (account: Account) => {
     // Get the ID of the account
@@ -101,23 +89,6 @@ const OrganisationsPage: React.FC = () => {
       setSelectedTemplateId(null); // Reset the selected template ID
     } catch (error) {
       console.error(error);
-    }
-  };
-
-  const openDeleteDialog = (accountId: string) => {
-    setAccountToDelete(accountId);
-    setOpenDialog(true);
-  };
-
-  const closeDeleteDialog = () => {
-    setOpenDialog(false);
-  };
-
-  const handleDeleteAccount = async () => {
-    if (accountToDelete) {
-      await deleteDoc(doc(db, "organisations", accountToDelete));
-      // Refresh the list or handle the UI update as needed
-      closeDeleteDialog();
     }
   };
 
@@ -186,13 +157,6 @@ const OrganisationsPage: React.FC = () => {
                     primary={account.name}
                     secondary={getTemplateNameById(account.accountingPlan)}
                   />
-                  <IconButton
-                    edge="end"
-                    aria-label="delete"
-                    onClick={(e) => openDeleteDialog(account.firestoreId)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
                 </ListItem>
               ))}
             </List>
@@ -241,32 +205,8 @@ const OrganisationsPage: React.FC = () => {
           </CardContent>
         </Card>
       </Grid>
-      <DeleteConfirmationDialog
-        open={openDialog}
-        onClose={closeDeleteDialog}
-        onConfirm={handleDeleteAccount}
-      />
     </Grid>
   );
 };
-
-const DeleteConfirmationDialog = ({ open, onClose, onConfirm }: any) => (
-  <Dialog open={open} onClose={onClose}>
-    <DialogTitle>Delete Account</DialogTitle>
-    <DialogContent>
-      <DialogContentText>
-        Are you sure you want to delete this account?
-      </DialogContentText>
-    </DialogContent>
-    <DialogActions>
-      <Button onClick={onClose} color="primary">
-        Cancel
-      </Button>
-      <Button onClick={onConfirm} color="primary" autoFocus>
-        Delete
-      </Button>
-    </DialogActions>
-  </Dialog>
-);
 
 export default OrganisationsPage;

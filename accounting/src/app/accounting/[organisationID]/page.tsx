@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { onSnapshot, doc } from "firebase/firestore";
+import { onSnapshot, doc, deleteDoc } from "firebase/firestore";
 import { db } from "../../db/firebase";
 import Link from "next/link";
 import {
@@ -11,6 +11,11 @@ import {
   Box,
   Drawer,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
@@ -20,6 +25,8 @@ import { AccountDetails } from "@/app/helpers/interfaces";
 
 const OrganisationPage: React.FC = () => {
   const [organisation, setOrganisation] = useState<AccountDetails | null>(null);
+  const [openDialog, setOpenDialog] = useState(false);
+
   const pathname = usePathname();
   const router = useRouter();
 
@@ -55,6 +62,41 @@ const OrganisationPage: React.FC = () => {
       </Container>
     );
   }
+
+  const openDeleteDialog = () => {
+    setOpenDialog(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (organisation) {
+      await deleteDoc(doc(db, "organisations", organisation.id));
+      router.push(`/accounting/`);
+      closeDeleteDialog();
+    }
+  };
+
+  const DeleteConfirmationDialog = ({ open, onClose, onConfirm }: any) => (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>Delete Organization</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          Are you sure you want to delete this organization?
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} color="primary">
+          Cancel
+        </Button>
+        <Button onClick={onConfirm} color="primary" autoFocus>
+          Delete
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -95,6 +137,14 @@ const OrganisationPage: React.FC = () => {
               <Typography variant="body1">
                 Bokföringsplan: {organisation?.accountingPlan}
               </Typography>
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={() => openDeleteDialog()}
+                sx={{ mt: 2 }}
+              >
+                Delete Organization
+              </Button>
             </Card>
           </Grid>
           <Grid item xs={12}>
@@ -117,6 +167,11 @@ const OrganisationPage: React.FC = () => {
           </Grid>
         </Grid>
       </Box>
+      <DeleteConfirmationDialog
+        open={openDialog}
+        onClose={closeDeleteDialog}
+        onConfirm={handleDeleteAccount}
+      />
     </Box>
   );
 };

@@ -1,4 +1,3 @@
-// ContextProvider.tsx
 "use client";
 import React, { ReactNode, useState, useEffect, FC } from "react";
 import { db } from "../db/firebase";
@@ -9,7 +8,14 @@ interface CoaTemplate {
   id: string;
   templateName: string;
   isDefault: boolean;
-  accounts: any[]; // Define this type more specifically based on your data structure
+  accounts: any[];
+}
+
+interface Organization {
+  id: string;
+  firestoreId: string;
+  name: string;
+  accountingPlan: string;
 }
 
 interface GlobalState {
@@ -21,6 +27,7 @@ interface GlobalState {
     defaultTemplates: CoaTemplate[];
     customTemplates: CoaTemplate[];
   };
+  organizations?: Organization[];
 }
 
 interface ContextProviderProps {
@@ -32,6 +39,7 @@ const ContextProvider: FC<ContextProviderProps> = ({ children }) => {
     chartOfAccountsTemplates: {
       defaultTemplates: [],
       customTemplates: [],
+      organizations: [],
     },
   });
 
@@ -78,6 +86,22 @@ const ContextProvider: FC<ContextProviderProps> = ({ children }) => {
     };
 
     fetchTemplates();
+
+    const fetchOrganizations = async () => {
+      const organizationsSnapshot = await getDocs(
+        collection(db, "organisations")
+      );
+      const organizations = organizationsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setGlobalState((prevState: any) => ({
+        ...prevState,
+        organizations,
+      }));
+    };
+
+    fetchOrganizations();
   }, []);
 
   const updateGlobalState = (newState: Partial<GlobalState>) => {

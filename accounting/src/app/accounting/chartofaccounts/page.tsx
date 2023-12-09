@@ -64,10 +64,6 @@ const ChartOfAccountsPage = () => {
 
   const fileInputRef: any = useRef(null);
 
-  useEffect(() => {
-    console.log(globalState);
-  }, []);
-
   const handleFileButtonClick = () => {
     fileInputRef.current!.click();
   };
