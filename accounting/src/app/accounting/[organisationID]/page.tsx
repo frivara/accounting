@@ -84,15 +84,15 @@ const OrganisationPage: React.FC = () => {
       <DialogTitle>Delete Organization</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Are you sure you want to delete this organization?
+          Är du säker på att du vill radera denna organisation?
         </DialogContentText>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="primary">
-          Cancel
+          Avbryt
         </Button>
         <Button onClick={onConfirm} color="primary" autoFocus>
-          Delete
+          Radera
         </Button>
       </DialogActions>
     </Dialog>
@@ -143,7 +143,7 @@ const OrganisationPage: React.FC = () => {
                 onClick={() => openDeleteDialog()}
                 sx={{ mt: 2 }}
               >
-                Delete Organization
+                Radera organisation
               </Button>
             </Card>
           </Grid>

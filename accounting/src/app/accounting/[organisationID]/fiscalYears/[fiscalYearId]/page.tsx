@@ -34,14 +34,13 @@ interface Transaction {
   entries: Entry[];
   date: string;
   fiscalYearId: string;
+  description: string; // Add this if you want to display the description
 }
 
 interface Entry {
   accountId: string;
-  counterAccountId: string;
-  type: "debit" | "credit";
-  amount: number;
-  description: string;
+  debit: number | null;
+  credit: number | null;
 }
 
 interface FinalBalances {
@@ -115,6 +114,7 @@ const FiscalYearPage: React.FC = () => {
           entries: data.entries,
           date: data.date,
           fiscalYearId: data.fiscalYearId,
+          description: data.description,
         });
       });
 
@@ -215,7 +215,6 @@ const FiscalYearPage: React.FC = () => {
         }}
       >
         <Grid container spacing={2}>
-          {/* Transaction Accordion List */}
           {transactions.map((transaction) => (
             <Grid item xs={12} key={transaction.id}>
               <Accordion
@@ -224,21 +223,19 @@ const FiscalYearPage: React.FC = () => {
               >
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Typography>
-                    {transaction.entries[0].description} - {transaction.date}
+                    {transaction.description} - {transaction.date}
                   </Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                  <Typography>ID: {transaction.id}</Typography>
-                  {/* Transaction Entries */}
+                  <Typography>
+                    Beskrivning: {transaction.description}
+                  </Typography>
+                  <Typography>Datum: {transaction.date}</Typography>
                   {transaction.entries.map((entry, index) => (
                     <Box key={index} sx={{ my: 1 }}>
-                      <Typography>
-                        {entry.type}: {entry.amount}
-                      </Typography>
                       <Typography>Kontonummer: {entry.accountId}</Typography>
-                      <Typography>
-                        Motkonto: {entry.counterAccountId}
-                      </Typography>
+                      <Typography>Debet: {entry.debit}</Typography>
+                      <Typography>Kredit: {entry.credit}</Typography>
                     </Box>
                   ))}
                   <Link

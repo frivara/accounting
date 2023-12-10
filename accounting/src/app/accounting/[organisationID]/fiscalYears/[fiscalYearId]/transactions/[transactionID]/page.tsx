@@ -21,36 +21,24 @@ import { useRouter } from "next/navigation";
 
 interface Entry {
   accountId: string;
-  accountName?: string;
-  counterAccountId?: string;
-  type: "debit" | "credit";
-  amount: number;
-  description: string;
+  debit: number | null;
+  credit: number | null;
 }
 
 interface Transaction {
   id: string;
   entries: Entry[];
   date: string;
-  proofFileURL?: string; // Optional since an uploaded file might not exist for all transactions
-}
-
-interface CoaAccount {
-  code: string; // Unique identifier for the account, usually a numerical code
-  name: string; // Descriptive name of the account
+  fiscalYearId: string;
+  proofFileURL?: string;
+  description: string;
 }
 
 const TransactionPage: React.FC = () => {
   const [transaction, setTransaction] = useState<Transaction | null>(null);
-  // You may want to fetch the account details similar to transaction details for better account information display.
-  // For now, I've commented out the COA fetching logic as it's not being used.
-  // const [coa, setCoa] = useState<CoaAccount[]>([]);
-
   const pathname = usePathname();
   const pathSegments = pathname.split("/");
   const transactionId = pathSegments[pathSegments.length - 1];
-  const fiscalYearId = pathSegments[pathSegments.length - 3];
-  const accountId = pathSegments[pathSegments.length - 5];
   const router = useRouter();
 
   useEffect(() => {
@@ -59,18 +47,18 @@ const TransactionPage: React.FC = () => {
     }
 
     const transactionRef = doc(db, "transactions", transactionId);
-
     const unsubscribe = onSnapshot(transactionRef, (docSnapshot) => {
       if (docSnapshot.exists()) {
         setTransaction({
           id: docSnapshot.id,
           entries: docSnapshot.data().entries || [],
           date: docSnapshot.data().date || "",
+          fiscalYearId: docSnapshot.data().fiscalYearId || "",
           proofFileURL: docSnapshot.data().proofFileURL || "",
+          description: docSnapshot.data().description || "",
         });
       }
     });
-
     return () => {
       unsubscribe();
     };
@@ -80,7 +68,7 @@ const TransactionPage: React.FC = () => {
     <Box sx={{ padding: 3 }}>
       <Button
         startIcon={<ArrowBackIcon />}
-        onClick={() => router.push(`/accounting/${accountId}/`)}
+        onClick={() => router.back()} // Update the route as needed
         sx={{ position: "absolute", top: 16, left: `calc(240px + 16px)` }}
       >
         Back
@@ -90,7 +78,7 @@ const TransactionPage: React.FC = () => {
       </Typography>
       {transaction ? (
         <>
-          <Typography>ID: {transaction.id}</Typography>
+          <Typography>Beskrivning: {transaction.description}</Typography>
           <Typography>
             Datum: {new Date(transaction.date).toLocaleDateString()}
           </Typography>
@@ -99,23 +87,17 @@ const TransactionPage: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Typ</TableCell>
                   <TableCell>Kontonummer</TableCell>
-                  <TableCell>Motkonto</TableCell>
-                  <TableCell>Belopp</TableCell>
-                  <TableCell>Beskrivning</TableCell>
+                  <TableCell>Debet</TableCell>
+                  <TableCell>Kredit</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {transaction.entries.map((entry, index) => (
                   <TableRow key={index}>
-                    <TableCell>
-                      {entry.type === "debit" ? "Debet" : "Kredit"}
-                    </TableCell>
                     <TableCell>{entry.accountId}</TableCell>
-                    <TableCell>{entry.counterAccountId}</TableCell>
-                    <TableCell>{entry.amount}</TableCell>
-                    <TableCell>{entry.description}</TableCell>
+                    <TableCell>{entry.debit}</TableCell>
+                    <TableCell>{entry.credit}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -125,17 +107,17 @@ const TransactionPage: React.FC = () => {
           {transaction.proofFileURL && (
             <Box
               sx={{
-                position: "relative",
-                width: "20vw",
-                height: "desiredHeight",
+                width: "100%",
+                maxWidth: "300px",
+                maxHeight: "400px",
+                my: 2,
               }}
             >
               <Typography variant="h6">Transaktionsbevis</Typography>
-              <Box
-                component="img"
+              <img
                 src={transaction.proofFileURL}
                 alt="Uploaded File"
-                sx={{ width: "100%", height: "100%", objectFit: "contain" }}
+                style={{ width: "100%", height: "auto", objectFit: "contain" }}
               />
             </Box>
           )}

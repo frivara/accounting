@@ -19,17 +19,20 @@ import {
   styled,
   Autocomplete,
 } from "@mui/material";
-import { runTransaction, increment } from "firebase/firestore";
+import { runTransaction } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "../../../../../../db/firebase"; // Adjust this import path to where your Firebase storage is initialized
+import { storage } from "../../../../../../db/firebase";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 interface Entry {
   accountId: string;
-  counterAccountId?: string;
-  type: "debit" | "credit";
-  amount: number;
-  description: string;
+  debit: number | null;
+  credit: number | null;
+}
+
+interface AccountOption {
+  code: number;
+  name: string;
 }
 
 interface Transaction {
@@ -38,6 +41,7 @@ interface Transaction {
   date: string;
   fiscalYearId: string;
   proofFileURL: string;
+  description: string;
 }
 
 const Input = styled("input")({
@@ -58,6 +62,7 @@ const StyledContainer = styled(Container)(({ theme }) => ({
 
 const NewTransactionPage: React.FC = () => {
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [description, setDescription] = useState("");
   const [isBalanced, setIsBalanced] = useState(false);
   const [totalDebits, setTotalDebits] = useState(0);
   const [totalCredits, setTotalCredits] = useState(0);
@@ -68,12 +73,12 @@ const NewTransactionPage: React.FC = () => {
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofFileName, setProofFileName] = useState<string | null>(null);
   const [accountCodes, setAccountCodes] = useState([]);
+  const [transactionDate, setTransactionDate] = useState("");
 
   const [newEntry, setNewEntry] = useState<Entry>({
-    accountId: "", // Ensure that this is an empty string
-    type: "debit",
-    amount: 0,
-    description: "",
+    accountId: "",
+    debit: null,
+    credit: null,
   });
 
   const router = useRouter();
@@ -100,57 +105,76 @@ const NewTransactionPage: React.FC = () => {
     fetchAccountCodes();
   }, [accountId]);
 
-  useEffect(() => {
-    console.log(accountCodes);
-  }, [accountCodes]);
+  const updateTotals = (entries: Entry[], newEntry: Entry) => {
+    const debits =
+      entries.reduce((acc, entry) => acc + (entry.debit || 0), 0) +
+      (newEntry.debit || 0);
+    const credits =
+      entries.reduce((acc, entry) => acc + (entry.credit || 0), 0) +
+      (newEntry.credit || 0);
+    setTotalDebits(debits);
+    setTotalCredits(credits);
+    setIsBalanced(debits === credits);
+  };
+
+  const handleDeleteEntry = (index: number) => {
+    setEntries((prevEntries) => prevEntries.filter((_, i) => i !== index));
+  };
 
   const handleEntryChange = (
     index: number,
     field: keyof Entry,
     newValue: any
   ) => {
-    // Check if newValue is an object with a 'code' property, otherwise use newValue as is
-    const value =
-      newValue &&
-      typeof newValue === "object" &&
-      newValue.hasOwnProperty("code")
-        ? newValue.code
-        : newValue;
-    // Use the existing logic to update the entry
-    handleNewEntryChange(index, field, value);
-  };
-
-  const handleAddEntry = () => {
-    if (!newEntry.accountId || newEntry.amount <= 0) {
-      alert(
-        "Please fill in all fields and ensure the amount is greater than zero."
-      );
-      return;
-    }
-    setEntries((prevEntries) => [...prevEntries, newEntry]);
-    setNewEntry({
-      accountId: "",
-      counterAccountId: "",
-      type: "debit",
-      amount: 0,
-      description: "",
+    console.log(entries.length);
+    setEntries((prevEntries) => {
+      const updatedEntries = [...prevEntries];
+      if (field === "accountId") {
+        updatedEntries[index] = {
+          ...updatedEntries[index],
+          [field]: newValue,
+        };
+      } else {
+        const valueToUpdate = Number(newValue); // Convert to number for debit and credit
+        updatedEntries[index] = {
+          ...updatedEntries[index],
+          [field]: valueToUpdate,
+        };
+      }
+      // Update totals after state has been set
+      updateTotals(updatedEntries, newEntry);
+      return updatedEntries;
     });
   };
 
-  const handleNewEntryChange = (
-    index: number,
-    field: keyof Entry,
-    value: any
-  ) => {
-    if (index >= 0 && index < entries.length) {
-      // Update existing entry
-      const updatedEntries = [...entries];
-      updatedEntries[index] = { ...updatedEntries[index], [field]: value };
-      setEntries(updatedEntries);
-    } else {
-      // Update new entry
-      setNewEntry((prev) => ({ ...prev, [field]: value }));
+  const handleAddEntry = () => {
+    if (!newEntry.accountId || (newEntry.debit && newEntry.credit)) {
+      alert("Each entry must have either a debit or a credit, not both.");
+      return;
     }
+    if (newEntry.debit === null && newEntry.credit === null) {
+      alert("You must enter a value for debit or credit.");
+      return;
+    }
+    const entryToAdd = {
+      ...newEntry,
+      debit: newEntry.debit || 0,
+      credit: newEntry.credit || 0,
+    };
+    setEntries((prevEntries) => [...prevEntries, newEntry]);
+    setNewEntry({ accountId: "", debit: null, credit: null });
+  };
+
+  const handleNewEntryChange = (field: keyof Entry, value: any) => {
+    setNewEntry((prevNewEntry) => {
+      const updatedNewEntry = {
+        ...prevNewEntry,
+        [field]: field === "accountId" ? value : Number(value),
+      };
+      // Update totals after state has been set
+      updateTotals(entries, updatedNewEntry);
+      return updatedNewEntry;
+    });
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,77 +202,48 @@ const NewTransactionPage: React.FC = () => {
   };
 
   const validateAndSaveTransaction = async () => {
-    let proofFileURL = "";
-
-    // If a file has been selected, upload it and get the URL
-    if (proofFile) {
-      try {
-        proofFileURL = await uploadFileAndGetURL(proofFile);
-      } catch (error) {
-        console.error("Error uploading file:", error);
-        alert("Failed to upload file. Please try again.");
-        return; // Stop the transaction from saving if file upload fails
-      }
-    } else {
-      // If no file is selected, you might want to warn the user but still allow the transaction to be saved.
-      if (
-        !confirm(
-          "Are you sure you want to save the transaction without a proof file?"
-        )
-      ) {
-        return; // Stop the transaction if the user does not confirm
-      }
-    }
-
+    // Calculate the total debits and credits
     const totalDebits = entries.reduce(
-      (acc, entry) => (entry.type === "debit" ? acc + entry.amount : acc),
+      (acc, entry) => acc + (entry.debit || 0),
       0
     );
     const totalCredits = entries.reduce(
-      (acc, entry) => (entry.type === "credit" ? acc + entry.amount : acc),
+      (acc, entry) => acc + (entry.credit || 0),
       0
     );
 
+    // Check if the transaction is balanced
     if (totalDebits !== totalCredits) {
-      alert("The sum of debits and credits must be equal.");
+      alert(
+        "The transaction is not balanced. The total debits and credits must be equal."
+      );
       return;
     }
 
+    // If the transaction is balanced, proceed to save the transaction
     try {
       await runTransaction(db, async (transaction) => {
+        let proofFileURL = "";
+        if (proofFile) {
+          proofFileURL = await uploadFileAndGetURL(proofFile);
+        }
         const newTransactionRef = doc(collection(db, "transactions"));
 
         // Construct the new transaction object
         const newTransaction: Transaction = {
           id: newTransactionRef.id,
           entries,
-          date: new Date().toISOString(),
+          date: transactionDate || new Date().toISOString(),
           fiscalYearId,
-          proofFileURL, // Use the proofFileURL here, it will be an empty string if no file was uploaded
+          proofFileURL: proofFileURL,
+          description,
         };
 
         // Set the new transaction in the database
         transaction.set(newTransactionRef, newTransaction);
 
-        // Update each account balance involved in the new transaction
-        entries.forEach((entry) => {
-          const accountRef = doc(
-            db,
-            "fiscalYears",
-            fiscalYearId,
-            "balances",
-            entry.accountId
-          );
-          transaction.set(
-            accountRef,
-            {
-              balance: increment(
-                entry.type === "debit" ? entry.amount : -entry.amount
-              ),
-            },
-            { merge: true }
-          );
-        });
+        // Update account balances if necessary
+        // You might need to adjust this logic based on how your application is supposed to work
       });
 
       alert("Transaction saved successfully!");
@@ -260,150 +255,89 @@ const NewTransactionPage: React.FC = () => {
   };
 
   useEffect(() => {
-    const debits = entries
-      .filter((e) => e.type === "debit")
-      .reduce((acc, curr) => acc + curr.amount, 0);
-    const credits = entries
-      .filter((e) => e.type === "credit")
-      .reduce((acc, curr) => acc + curr.amount, 0);
+    const debits = entries.reduce((acc, entry) => acc + (entry.debit || 0), 0);
+    const credits = entries.reduce(
+      (acc, entry) => acc + (entry.credit || 0),
+      0
+    );
     setTotalDebits(debits);
     setTotalCredits(credits);
+    setIsBalanced(debits === credits);
   }, [entries]);
 
-  const handleBalanceEntry = () => {
-    // First, add the current new entry if it's valid
-    if (
-      !newEntry.accountId ||
-      !newEntry.counterAccountId ||
-      newEntry.amount <= 0
-    ) {
-      alert(
-        "Please fill in all fields and ensure the amount is greater than zero."
-      );
-      return;
-    }
-
-    // Create the original entry based on the newEntry state
-    const originalEntry: Entry = {
-      ...newEntry,
-      counterAccountId: newEntry.counterAccountId!,
-    };
-
-    // Then create the mirrored entry
-    const mirroredEntry: Entry = {
-      accountId: newEntry.counterAccountId!,
-      counterAccountId: newEntry.accountId!,
-      type: newEntry.type === "debit" ? "credit" : "debit", // Switch the type for the mirrored entry
-      amount: newEntry.amount, // Same amount for the mirrored entry
-      description: newEntry.description, // Same description for the mirrored entry
-    };
-
-    // Add both entries to the entries array
-    setEntries((prevEntries) => [...prevEntries, originalEntry, mirroredEntry]);
-
-    setIsBalanced(true);
-
-    // Reset the newEntry state to be ready for a new entry
-    setNewEntry({
-      accountId: "",
-      counterAccountId: "",
-      type: "debit",
-      amount: 0,
-      description: "",
-    });
-  };
-
-  const renderEntryRow = (entry: any, index: any | undefined) => (
+  const renderEntryRow = (entry: Entry, index: number) => (
     <TableRow key={index}>
       <TableCell>
         <Autocomplete
           freeSolo
           options={accountCodes}
-          getOptionLabel={(option) =>
-            typeof option === "string"
-              ? option
-              : `${option.code} - ${option.name}`
-          }
+          getOptionLabel={(option: any) => {
+            // Check if option is an object and has properties 'code' and 'name'
+            if (option && typeof option === "object") {
+              return `${option.code} - ${option.name}`;
+            }
+            // Return the string as is if it's not an object
+            return option;
+          }}
           value={entry.accountId}
-          onChange={(event, newValue) =>
-            handleEntryChange(index, "accountId", newValue)
-          }
+          onChange={(event, newValue: any) => {
+            if (typeof newValue === "object" && newValue !== null) {
+              handleEntryChange(
+                index,
+                "accountId",
+                `${newValue.code} - ${newValue.name}`
+              );
+            } else {
+              handleEntryChange(index, "accountId", newValue);
+            }
+          }}
+          renderOption={(props, option) => {
+            // This is used to render the options in the dropdown menu
+
+            return (
+              <li {...props}>
+                {option.code} - {option.name}
+              </li>
+            );
+          }}
           renderInput={(params) => (
             <TextField {...params} label="Account Code" />
           )}
         />
       </TableCell>
       <TableCell>
-        <Autocomplete
-          freeSolo
-          options={accountCodes}
-          getOptionLabel={(option) =>
-            typeof option === "string"
-              ? option
-              : `${option.code} - ${option.name}`
-          }
-          value={entry.counterAccountId}
-          onChange={(event, newValue) =>
-            handleEntryChange(index, "counterAccountId", newValue)
-          }
-          renderInput={(params) => (
-            <TextField {...params} label="Counter Account Code" />
-          )}
-        />
-      </TableCell>
-      <TableCell>
         <TextField
-          select
-          value={entry.type}
-          onChange={(e) => handleEntryChange(index, "type", e.target.value)}
-          SelectProps={{ native: true }}
+          type="number"
+          value={entry.debit}
+          onChange={(e) => handleEntryChange(index, "debit", e.target.value)}
           size="small"
-        >
-          <option value="debit">Debit</option>
-          <option value="credit">Credit</option>
-        </TextField>
+          inputProps={{ min: 0 }} // Ensure that the user can only enter positive numbers
+        />
       </TableCell>
       <TableCell>
         <TextField
           type="number"
-          value={entry.amount}
-          onChange={(e) => handleEntryChange(index, "amount", e.target.value)}
+          value={entry.credit}
+          onChange={(e) => handleEntryChange(index, "credit", e.target.value)}
           size="small"
+          inputProps={{ min: 0 }} // Ensure that the user can only enter positive numbers
         />
       </TableCell>
       <TableCell>
-        <TextField
-          value={entry.description}
-          onChange={(e) =>
-            handleEntryChange(index, "description", e.target.value)
-          }
-          size="small"
-        />
-      </TableCell>
-      <TableCell>
-        {!isBalanced && (
-          <Button
-            onClick={handleBalanceEntry}
-            variant="contained"
-            color="primary"
-            disabled={entries.length > 0 && isTransactionBalanced()}
-          >
-            Balansera rad
-          </Button>
-        )}
+        <Button
+          onClick={() => handleDeleteEntry(index)}
+          variant="contained"
+          color="secondary"
+        >
+          Ta bort
+        </Button>
       </TableCell>
     </TableRow>
   );
 
-  const isTransactionBalanced = () => {
-    const totalDebits = entries
-      .filter((e) => e.type === "debit")
-      .reduce((acc, curr) => acc + curr.amount, 0);
-    const totalCredits = entries
-      .filter((e) => e.type === "credit")
-      .reduce((acc, curr) => acc + curr.amount, 0);
-    return totalDebits === totalCredits;
-  };
+  useEffect(() => {
+    console.log(entries.length);
+  }, [entries]);
 
   return (
     <StyledContainer>
@@ -439,6 +373,13 @@ const NewTransactionPage: React.FC = () => {
             Saldo: {totalDebits - totalCredits}
           </Typography>
         </Box>
+        <TextField
+          label="Beskrivning"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          margin="normal"
+        />
+
         <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
           <label htmlFor="contained-button-file">
             <Input
@@ -461,19 +402,27 @@ const NewTransactionPage: React.FC = () => {
           )}
         </Box>
       </Box>
+      <TextField
+        type="date"
+        label="Date"
+        InputLabelProps={{
+          shrink: true,
+        }}
+        value={transactionDate}
+        onChange={(e) => setTransactionDate(e.target.value)}
+      />
       <TableContainer component={Paper} sx={{ my: 2 }}>
         <Table>
           <TableHead>
             <TableRow>
               <TableCell>Kontonummer</TableCell>
-              <TableCell>Motkonto</TableCell>
-              <TableCell>Typ</TableCell>
-              <TableCell>Belopp</TableCell>
-              <TableCell>Beskrivning</TableCell>
+              <TableCell>Debet</TableCell>
+              <TableCell>Kredit</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {entries.map((entry, index) => renderEntryRow(entry, index))}
+            {entries.map(renderEntryRow)}
+            {/* Render the new entry row separately */}
             {renderEntryRow(newEntry, entries.length)}
           </TableBody>
         </Table>
@@ -488,6 +437,7 @@ const NewTransactionPage: React.FC = () => {
           onClick={validateAndSaveTransaction}
           variant="contained"
           color="primary"
+          disabled={entries.length === 0} // Disable button if no entries
         >
           Spara transaktion
         </Button>
