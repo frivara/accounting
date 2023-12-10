@@ -342,6 +342,37 @@ const ChartOfAccountsPage = () => {
         >
           <Table stickyHeader aria-label="sticky table">
             <TableBody>
+              <TableRow>
+                <TableCell>
+                  <AccountCodeSearch
+                    currentAccountId={newAccount.code}
+                    onSelectAccount={(selectedAccount: {
+                      code: string;
+                      name: string;
+                    }) => {
+                      if (selectedAccount) {
+                        setNewAccount({
+                          ...newAccount,
+                          code: selectedAccount.code,
+                          name: selectedAccount.name,
+                        });
+                      }
+                    }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <TextField
+                    placeholder="Kontonamn"
+                    value={newAccount.name}
+                    onChange={(e) =>
+                      handleNewAccountChange("name", e.target.value)
+                    }
+                  />
+                </TableCell>
+                <TableCell>
+                  <Button onClick={handleAddAccount}>Lägg till konto</Button>
+                </TableCell>
+              </TableRow>
               {visibleAccounts.map((account: any, index: any) => (
                 <TableRow
                   key={index}
@@ -380,37 +411,6 @@ const ChartOfAccountsPage = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              <TableRow>
-                <TableCell>
-                  <AccountCodeSearch
-                    currentAccountId={newAccount.code}
-                    onSelectAccount={(selectedAccount: {
-                      code: string;
-                      name: string;
-                    }) => {
-                      if (selectedAccount) {
-                        setNewAccount({
-                          ...newAccount,
-                          code: selectedAccount.code,
-                          name: selectedAccount.name,
-                        });
-                      }
-                    }}
-                  />
-                </TableCell>
-                <TableCell>
-                  <TextField
-                    placeholder="Kontonamn"
-                    value={newAccount.name}
-                    onChange={(e) =>
-                      handleNewAccountChange("name", e.target.value)
-                    }
-                  />
-                </TableCell>
-                <TableCell>
-                  <Button onClick={handleAddAccount}>Lägg till konto</Button>
-                </TableCell>
-              </TableRow>
             </TableBody>
           </Table>
         </TableContainer>
