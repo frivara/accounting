@@ -52,7 +52,7 @@ const ChartOfAccountsPage = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [isCodeValid, setIsCodeValid] = useState(true);
   const [visibleAccounts, setVisibleAccounts] = useState<any>([]);
-  const [loadMore, setLoadMore] = useState(false);
+  const [loadMore, setLoadMore] = useState(true);
   const ITEMS_PER_PAGE = 20; // Adjust the number of items per page as needed
   const [currentPage, setCurrentPage] = useState(0);
   const accountsPerPage = 20;
@@ -77,7 +77,9 @@ const ChartOfAccountsPage = () => {
   };
 
   const handleDeleteAccount = (index: number) => {
+    console.log("Clicked the delete button!");
     setAccounts((prev) => prev.filter((_, i) => i !== index));
+    setVisibleAccounts((prev: any[]) => prev.filter((_, i) => i !== index));
   };
 
   const handleSaveAccount = async () => {
@@ -108,10 +110,11 @@ const ChartOfAccountsPage = () => {
   const handleAddAccount = () => {
     if (newAccount.code.length === 4 && newAccount.name !== "") {
       // Adding the new account to the list of accounts
-      setAccounts((prev) => {
-        const updatedAccounts = [...prev, { ...newAccount }];
-        return updatedAccounts;
-      });
+      const updatedNewAccount = { ...newAccount };
+      setAccounts((prev) => [...prev, updatedNewAccount]);
+
+      // Also update visibleAccounts to reflect the new account
+      setVisibleAccounts((prev: any) => [...prev, updatedNewAccount]);
 
       setNewAccount({ code: "", name: "" }); // Reset new account fields
     } else {
@@ -120,15 +123,19 @@ const ChartOfAccountsPage = () => {
   };
 
   const handleSaveTemplate = async () => {
-    // Check if the template name already exists in default templates
-    const nameExists = defaultTemplates.some(
-      (template: any) =>
-        template.templateName.toLowerCase() === templateName.toLowerCase()
+    const templateNameLower = templateName.toLowerCase();
+
+    // Check if the template name already exists in default or custom templates
+    const nameExistsInTemplates = [
+      ...defaultTemplates,
+      ...customTemplates,
+    ].some(
+      (template) => template.templateName.toLowerCase() === templateNameLower
     );
 
-    if (nameExists) {
+    if (nameExistsInTemplates) {
       alert(
-        "A default template with this name already exists. Please choose a different name."
+        "A template with this name already exists. Please choose a different name."
       );
       return;
     }
@@ -153,12 +160,20 @@ const ChartOfAccountsPage = () => {
       alert("Template saved successfully!");
 
       // Update the global state with the new template
-      updateGlobalState({
-        chartOfAccountsTemplates: {
-          defaultTemplates: [...defaultTemplates], // Update accordingly
-          customTemplates: [...customTemplates, userTemplate], // Add the new user template
-        },
-      });
+      updateGlobalState(
+        (prevState: {
+          chartOfAccountsTemplates: { customTemplates: any };
+        }) => ({
+          ...prevState,
+          chartOfAccountsTemplates: {
+            ...prevState.chartOfAccountsTemplates,
+            customTemplates: [
+              ...prevState.chartOfAccountsTemplates.customTemplates,
+              userTemplate,
+            ],
+          },
+        })
+      );
     } catch (error) {
       console.error("Error saving user template:", error);
       alert("Failed to save template. Please try again.");
@@ -219,66 +234,54 @@ const ChartOfAccountsPage = () => {
     const selectedTemplate = [...defaultTemplates, ...customTemplates].find(
       (t) => t.id === templateId
     );
+
     setSelectedTemplate(selectedTemplate);
-    let template = defaultTemplates.find((t: any) => t.id === templateId);
-    if (!template) {
-      template = customTemplates.find((t: any) => t.id === templateId);
-    }
 
-    setSelectedTemplate(template);
-
-    if (template) {
-      setVisibleAccounts(template.accounts.slice(0, ITEMS_PER_PAGE));
-      setLoadMore(template.accounts.length > ITEMS_PER_PAGE);
-      const accountsClone = template.accounts.map((account: any) => ({
-        ...account,
-      }));
-      setAccounts(accountsClone);
-      setTemplateName(template.templateName);
+    // Check if selectedTemplate is valid and has accounts
+    if (selectedTemplate && selectedTemplate.accounts) {
+      setAccounts(selectedTemplate.accounts); // Update accounts with all accounts from the selected template
+      setVisibleAccounts(selectedTemplate.accounts.slice(0, accountsPerPage));
+      setCurrentPage(1); // Reset currentPage to 1
+      setLoadMore(true);
     } else {
-      setAccounts([]);
-      setTemplateName("");
+      setAccounts([]); // Clear accounts if no template is selected
+      setVisibleAccounts([]);
+      setCurrentPage(0);
+      setLoadMore(false);
     }
-    setVisibleAccounts(template.accounts.slice(0, accountsPerPage));
-    setCurrentPage(0);
   };
 
   const loadMoreAccounts = () => {
-    if (currentPage * accountsPerPage >= accounts.length) return;
+    if (!selectedTemplate || !selectedTemplate.accounts) return;
 
     const nextIndex = currentPage * accountsPerPage;
     const newAccounts = selectedTemplate.accounts.slice(
       nextIndex,
       nextIndex + accountsPerPage
     );
-    setVisibleAccounts((prev: any) => [...prev, ...newAccounts]);
-    setCurrentPage((prev) => prev + 1);
-  };
 
-  const handleLoadMore = () => {
-    const nextResults = accounts.slice(
-      visibleAccounts.length,
-      visibleAccounts.length + ITEMS_PER_PAGE
-    );
-    setVisibleAccounts((prevAccounts: any) => [
-      ...prevAccounts,
-      ...nextResults,
-    ]);
-    setLoadMore(accounts.length > visibleAccounts.length + ITEMS_PER_PAGE);
+    if (newAccounts.length > 0) {
+      setVisibleAccounts((prev: any) => [...prev, ...newAccounts]);
+      setCurrentPage((prev) => prev + 1);
+    } else {
+      setLoadMore(false); // No more accounts to load
+    }
   };
 
   const observer: any = useRef();
   const lastAccountElementRef = useCallback(
     (node: any) => {
       if (observer.current) observer.current.disconnect();
+
       observer.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && loadMore) {
-          loadMoreAccounts(); // Load more accounts when the last element is visible
+          loadMoreAccounts();
         }
       });
+
       if (node) observer.current.observe(node);
     },
-    [loadMore]
+    [loadMore, currentPage] // Add currentPage as a dependency
   );
 
   useEffect(() => {
@@ -332,13 +335,13 @@ const ChartOfAccountsPage = () => {
         </Box>
 
         <AccountTable
-          accounts={accounts}
+          accounts={visibleAccounts}
           handleAccountChange={handleAccountChange}
           handleDeleteAccount={handleDeleteAccount}
           newAccount={newAccount}
           handleNewAccountChange={handleNewAccountChange}
           handleAddAccount={handleAddAccount}
-          lastAccountElementRef={lastAccountElementRef} // Pass this as a prop
+          lastAccountElementRef={lastAccountElementRef}
         />
       </Box>
 

@@ -25,7 +25,7 @@ const AccountTable = ({
 }: any) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedHandleNewAccountChange = useCallback(
-    debounce((field, value) => handleNewAccountChange(field, value), 500),
+    debounce((field, value) => handleNewAccountChange(field, value), 100),
     [handleNewAccountChange]
   );
 

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { onSnapshot, doc, deleteDoc } from "firebase/firestore";
 import { db } from "../../db/firebase";
 import Link from "next/link";
@@ -22,13 +22,27 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import { usePathname, useRouter } from "next/navigation";
 import FiscalYearsList from "../../components/FiscalYearsList";
 import { AccountDetails } from "@/app/helpers/interfaces";
+import { MyContext } from "@/app/helpers/context";
 
 const OrganisationPage: React.FC = () => {
   const [organisation, setOrganisation] = useState<AccountDetails | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const { globalState } = useContext<any>(MyContext);
+  const templates = globalState.chartOfAccountsTemplates;
 
   const pathname = usePathname();
   const router = useRouter();
+
+  const getTemplateNameById = (templateId: any) => {
+    const allTemplates = [
+      ...templates.defaultTemplates,
+      ...templates.customTemplates,
+    ];
+    const foundTemplate = allTemplates.find(
+      (template) => template.id === templateId
+    );
+    return foundTemplate ? foundTemplate.templateName : "Unknown Template";
+  };
 
   useEffect(() => {
     const organisationId = pathname.split("/").pop();
@@ -135,7 +149,8 @@ const OrganisationPage: React.FC = () => {
             <Card sx={{ p: 2 }}>
               <Typography variant="h5">{organisation?.name}</Typography>
               <Typography variant="body1">
-                Bokföringsplan: {organisation?.accountingPlan}
+                Bokföringsplan:{" "}
+                {getTemplateNameById(organisation?.accountingPlan)}
               </Typography>
               <Button
                 variant="contained"

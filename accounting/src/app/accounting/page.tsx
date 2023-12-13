@@ -102,7 +102,6 @@ const OrganisationsPage: React.FC = () => {
 
       querySnapshot.forEach((doc) => {
         itemsArray.push({ ...doc.data(), firestoreId: doc.id });
-        console.log(doc.id);
       });
       setAccounts(itemsArray);
     });
