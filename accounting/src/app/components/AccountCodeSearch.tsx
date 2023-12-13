@@ -14,7 +14,7 @@ const AccountCodeSearch = ({
 
   useEffect(() => {
     const fetchAccounts = async () => {
-      const isDefault = true; // Replace with actual logic
+      const isDefault = true;
       const coaCollection = collection(db, "chartOfAccountsTemplates");
       const queryCondition = isDefault
         ? where("isDefault", "==", true)

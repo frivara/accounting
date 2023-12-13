@@ -7,31 +7,24 @@ import React, {
   useCallback,
 } from "react";
 import { collection, addDoc, doc, updateDoc } from "firebase/firestore";
-import { db } from "../../db/firebase"; // Adjust the import path accordingly
+import { db } from "../../db/firebase";
 import {
   Box,
   Button,
   Container,
   TextField,
   Table,
-  TableBody,
   TableCell,
   TableHead,
   TableRow,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
-  ListSubheader,
   Typography,
-  Paper,
-  TableContainer,
 } from "@mui/material";
 import { styled } from "@mui/system";
 import Papa from "papaparse";
-import AccountCodeSearch from "@/app/components/AccountCodeSearch";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { MyContext } from "@/app/helpers/context";
+import AccountTable from "../../components/AccountTable";
+import TemplateSelection from "../../components/TemplateSelection";
+import FileUpload from "../../components/FileUpload";
 
 interface CoaAccount {
   code: string;
@@ -61,6 +54,8 @@ const ChartOfAccountsPage = () => {
   const [visibleAccounts, setVisibleAccounts] = useState<any>([]);
   const [loadMore, setLoadMore] = useState(false);
   const ITEMS_PER_PAGE = 20; // Adjust the number of items per page as needed
+  const [currentPage, setCurrentPage] = useState(0);
+  const accountsPerPage = 20;
 
   const fileInputRef: any = useRef(null);
 
@@ -93,6 +88,8 @@ const ChartOfAccountsPage = () => {
         accounts: accounts,
       };
 
+      console.log("Saving updated template:", updatedTemplate); // add this log
+
       await updateDoc(
         doc(db, "chartOfAccountsTemplates", selectedTemplate.id),
         updatedTemplate
@@ -103,14 +100,22 @@ const ChartOfAccountsPage = () => {
     }
   };
 
-  const handleNewAccountChange = (field: keyof CoaAccount, value: string) => {
+  const handleNewAccountChange = (field: any, value: any) => {
+    console.log(`Field: ${field}, Value: ${value}`);
     setNewAccount((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleAddAccount = () => {
     if (newAccount.code.length === 4 && newAccount.name !== "") {
-      setAccounts((prev) => [...prev, newAccount]);
+      // Adding the new account to the list of accounts
+      setAccounts((prev) => {
+        const updatedAccounts = [...prev, { ...newAccount }];
+        return updatedAccounts;
+      });
+
       setNewAccount({ code: "", name: "" }); // Reset new account fields
+    } else {
+      console.log("Invalid account details");
     }
   };
 
@@ -145,7 +150,6 @@ const ChartOfAccountsPage = () => {
         collection(db, "chartOfAccountsTemplates"),
         userTemplate
       );
-      console.log("User template saved with ID: ", docRef.id);
       alert("Template saved successfully!");
 
       // Update the global state with the new template
@@ -212,6 +216,10 @@ const ChartOfAccountsPage = () => {
   };
 
   const handleTemplateSelection = (templateId: string) => {
+    const selectedTemplate = [...defaultTemplates, ...customTemplates].find(
+      (t) => t.id === templateId
+    );
+    setSelectedTemplate(selectedTemplate);
     let template = defaultTemplates.find((t: any) => t.id === templateId);
     if (!template) {
       template = customTemplates.find((t: any) => t.id === templateId);
@@ -231,19 +239,32 @@ const ChartOfAccountsPage = () => {
       setAccounts([]);
       setTemplateName("");
     }
+    setVisibleAccounts(template.accounts.slice(0, accountsPerPage));
+    setCurrentPage(0);
+  };
+
+  const loadMoreAccounts = () => {
+    if (currentPage * accountsPerPage >= accounts.length) return;
+
+    const nextIndex = currentPage * accountsPerPage;
+    const newAccounts = selectedTemplate.accounts.slice(
+      nextIndex,
+      nextIndex + accountsPerPage
+    );
+    setVisibleAccounts((prev: any) => [...prev, ...newAccounts]);
+    setCurrentPage((prev) => prev + 1);
   };
 
   const handleLoadMore = () => {
-    const currentLength = visibleAccounts.length;
-    const isMore = currentLength < accounts.length;
-    const nextResults = isMore
-      ? accounts.slice(currentLength, currentLength + ITEMS_PER_PAGE)
-      : [];
+    const nextResults = accounts.slice(
+      visibleAccounts.length,
+      visibleAccounts.length + ITEMS_PER_PAGE
+    );
     setVisibleAccounts((prevAccounts: any) => [
       ...prevAccounts,
       ...nextResults,
     ]);
-    setLoadMore(accounts.length > currentLength + nextResults.length);
+    setLoadMore(accounts.length > visibleAccounts.length + ITEMS_PER_PAGE);
   };
 
   const observer: any = useRef();
@@ -252,7 +273,7 @@ const ChartOfAccountsPage = () => {
       if (observer.current) observer.current.disconnect();
       observer.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && loadMore) {
-          handleLoadMore();
+          loadMoreAccounts(); // Load more accounts when the last element is visible
         }
       });
       if (node) observer.current.observe(node);
@@ -275,35 +296,12 @@ const ChartOfAccountsPage = () => {
         Kontoplaner
       </Typography>
 
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Välj en kontoplanmall
-        </Typography>
-        <FormControl fullWidth sx={{ mb: 2 }}>
-          <InputLabel id="default-template-select-label">
-            Välj en mall
-          </InputLabel>
-          <Select
-            labelId="default-template-select-label"
-            value={selectedTemplate ? selectedTemplate.id : ""}
-            label="Välj en mall"
-            onChange={(e) => handleTemplateSelection(e.target.value)}
-          >
-            <ListSubheader>Låsta kontoplaner</ListSubheader>
-            {defaultTemplates.map((template: any) => (
-              <MenuItem key={template.id} value={template.id}>
-                {template.templateName}
-              </MenuItem>
-            ))}
-            <ListSubheader>Mina kontoplaner</ListSubheader>
-            {customTemplates.map((template: any) => (
-              <MenuItem key={template.id} value={template.id}>
-                {template.templateName}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
+      <TemplateSelection
+        defaultTemplates={defaultTemplates}
+        customTemplates={customTemplates}
+        selectedTemplateId={selectedTemplate ? selectedTemplate.id : ""}
+        onTemplateSelection={handleTemplateSelection}
+      />
 
       <Box sx={{ mb: 2 }}>
         <Typography variant="h6" gutterBottom>
@@ -333,87 +331,15 @@ const ChartOfAccountsPage = () => {
           </Table>
         </Box>
 
-        <TableContainer
-          component={Paper}
-          sx={{
-            maxHeight: "200px",
-            overflowY: "auto",
-          }}
-        >
-          <Table stickyHeader aria-label="sticky table">
-            <TableBody>
-              <TableRow>
-                <TableCell>
-                  <AccountCodeSearch
-                    currentAccountId={newAccount.code}
-                    onSelectAccount={(selectedAccount: {
-                      code: string;
-                      name: string;
-                    }) => {
-                      if (selectedAccount) {
-                        setNewAccount({
-                          ...newAccount,
-                          code: selectedAccount.code,
-                          name: selectedAccount.name,
-                        });
-                      }
-                    }}
-                  />
-                </TableCell>
-                <TableCell>
-                  <TextField
-                    placeholder="Kontonamn"
-                    value={newAccount.name}
-                    onChange={(e) =>
-                      handleNewAccountChange("name", e.target.value)
-                    }
-                  />
-                </TableCell>
-                <TableCell>
-                  <Button onClick={handleAddAccount}>Lägg till konto</Button>
-                </TableCell>
-              </TableRow>
-              {visibleAccounts.map((account: any, index: any) => (
-                <TableRow
-                  key={index}
-                  ref={
-                    index === visibleAccounts.length - 1
-                      ? lastAccountElementRef
-                      : null
-                  }
-                >
-                  <TableCell>
-                    <TextField
-                      value={account.code}
-                      onChange={(e) =>
-                        handleAccountChange(index, "code", e.target.value)
-                      }
-                      error={!isCodeValid && account.code.length > 0}
-                      helperText={
-                        !isCodeValid && account.code.length > 0
-                          ? "Koden måste vara exakt 4 tecken lång"
-                          : ""
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <TextField
-                      value={account.name}
-                      onChange={(e) =>
-                        handleAccountChange(index, "name", e.target.value)
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Button onClick={() => handleDeleteAccount(index)}>
-                      <DeleteIcon />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <AccountTable
+          accounts={accounts}
+          handleAccountChange={handleAccountChange}
+          handleDeleteAccount={handleDeleteAccount}
+          newAccount={newAccount}
+          handleNewAccountChange={handleNewAccountChange}
+          handleAddAccount={handleAddAccount}
+          lastAccountElementRef={lastAccountElementRef} // Pass this as a prop
+        />
       </Box>
 
       <Box
@@ -431,21 +357,10 @@ const ChartOfAccountsPage = () => {
         </Button>
       </Box>
 
-      <Box sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleFileButtonClick}
-        >
-          Ladda upp CSV
-        </Button>
-      </Box>
-      <input
-        type="file"
-        ref={fileInputRef}
-        accept=".csv"
-        onChange={handleFileUpload}
-        style={{ display: "none" }}
+      <FileUpload
+        onFileButtonClick={handleFileButtonClick}
+        fileInputRef={fileInputRef}
+        onFileChange={handleFileUpload}
       />
     </StyledContainer>
   );
