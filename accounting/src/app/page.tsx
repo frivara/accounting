@@ -1,45 +1,32 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
+import React, { useContext } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Container,
-  Typography,
-  Button,
-  List,
-  ListItem,
-  Grid,
-} from "@mui/material";
+import { Container, Typography, Grid } from "@mui/material";
+import { MyContext } from "./helpers/context";
 
 const HomePage = () => {
   const router = useRouter();
-  const [user, setUser] = useState<string | null>(null);
+  const { globalState } = useContext<any>(MyContext);
+  const { user } = globalState;
 
-  useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (user) {
-      setUser(user);
-    } else {
-      router.push("/login");
-    }
-  }, [router]);
+  if (!user) {
+    router.push("/login");
+    return null;
+  }
 
   return (
     <Grid container style={{ paddingLeft: 240 }}>
-      {" "}
-      {/* Adjusted for navbar width */}
       <Grid item xs={12}>
         <Container>
           <Typography variant="h3" gutterBottom>
             Bokföring 2.0 - The ReBokföringengeance ft. Tails
           </Typography>
           <Typography variant="h4" gutterBottom>
-            Välkommen hit, {user}!
+            Välkommen hit, {user.name}!
           </Typography>
-
+          {/* Consider dynamically displaying the last accessed organization/fiscal year here */}
           <Typography variant="h6" gutterBottom>
-            Developer&apos;s note: Perhaps put the organisation/fiscal year that
-            the user last worked on here as a link?
+            {/* Place for dynamic content */}
           </Typography>
         </Container>
       </Grid>

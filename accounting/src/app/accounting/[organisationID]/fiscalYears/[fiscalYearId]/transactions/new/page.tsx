@@ -126,22 +126,29 @@ const NewTransactionPage: React.FC = () => {
     field: keyof Entry,
     newValue: any
   ) => {
-    console.log(entries.length);
     setEntries((prevEntries) => {
       const updatedEntries = [...prevEntries];
-      if (field === "accountId") {
+      const valueToUpdate = Number(newValue); // Convert to number for debit and credit
+
+      if (field === "debit") {
+        updatedEntries[index] = {
+          ...updatedEntries[index],
+          debit: valueToUpdate,
+          credit: valueToUpdate ? 0 : updatedEntries[index].credit, // This sets credit to 0 if debit is entered
+        };
+      } else if (field === "credit") {
+        updatedEntries[index] = {
+          ...updatedEntries[index],
+          credit: valueToUpdate,
+          debit: valueToUpdate ? 0 : updatedEntries[index].debit, // And this sets debit to 0 if credit is entered
+        };
+      } else {
         updatedEntries[index] = {
           ...updatedEntries[index],
           [field]: newValue,
         };
-      } else {
-        const valueToUpdate = Number(newValue); // Convert to number for debit and credit
-        updatedEntries[index] = {
-          ...updatedEntries[index],
-          [field]: valueToUpdate,
-        };
       }
-      // Update totals after state has been set
+
       updateTotals(updatedEntries, newEntry);
       return updatedEntries;
     });
@@ -163,18 +170,6 @@ const NewTransactionPage: React.FC = () => {
     };
     setEntries((prevEntries) => [...prevEntries, newEntry]);
     setNewEntry({ accountId: "", debit: null, credit: null });
-  };
-
-  const handleNewEntryChange = (field: keyof Entry, value: any) => {
-    setNewEntry((prevNewEntry) => {
-      const updatedNewEntry = {
-        ...prevNewEntry,
-        [field]: field === "accountId" ? value : Number(value),
-      };
-      // Update totals after state has been set
-      updateTotals(entries, updatedNewEntry);
-      return updatedNewEntry;
-    });
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {

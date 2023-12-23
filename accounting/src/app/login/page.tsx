@@ -1,27 +1,23 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { TextField, Button } from "@mui/material";
+import { MyContext } from "../helpers/context";
 import "./login.css";
 
 const LoginPage: React.FC = () => {
   const router = useRouter();
+  const { login } = useContext<any>(MyContext);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = () => {
-    // Clear previous error messages
+  const handleLogin = async () => {
     setError(null);
-
-    // Check against hard-coded credentials
-    if (email === "admin@example.com" && password === "password") {
-      localStorage.setItem("user", email);
-      // Redirect to the home page
+    try {
+      await login(email, password);
       router.push("/");
-    } else {
-      // Set login status to false
-      // Show error message
+    } catch (error) {
       setError("Invalid email or password");
     }
   };
