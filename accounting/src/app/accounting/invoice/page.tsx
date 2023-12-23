@@ -62,42 +62,105 @@ const InvoicePage = () => {
     });
   };
 
-  const updateItem = (index: number, field: string, value: string) => {
-    const newItems = [...invoiceData.items];
-    newItems[index] = { ...newItems[index], [field]: value };
+  const updateItem = (index: number, field: keyof Item, value: string) => {
+    const newItems: any = [...invoiceData.items];
+    const newValue =
+      field === "quantity" || field === "unitPrice" ? Number(value) : value;
+    newItems[index] = { ...newItems[index], [field]: newValue };
+
+    // If quantity or unitPrice fields are updated, recalculate the amount
+    if (field === "quantity" || field === "unitPrice") {
+      const quantity = newItems[index].quantity || 0;
+      const unitPrice = newItems[index].unitPrice || 0;
+      newItems[index].amount = quantity * unitPrice; // Calculate amount here
+    }
+
     setInvoiceData({ ...invoiceData, items: newItems });
   };
 
   const generatePDF = () => {
-    const doc = new jsPDF();
-
-    const tableColumns = [
-      "Product Name",
-      "Unit",
-      "Quantity",
-      "Unit Price",
-      "VAT Rate",
-    ];
-    const tableRows: (string | number)[][] = [];
-
-    invoiceData.items.forEach((item) => {
-      const itemData = [
-        item.productName,
-        item.unit,
-        item.quantity,
-        item.unitPrice,
-        `${item.vatRate}%`,
-      ];
-      tableRows.push(itemData);
+    const doc: any = new jsPDF({
+      orientation: "p",
+      unit: "pt",
+      format: "a4",
     });
 
-    doc.text("Invoice", 14, 15);
+    // Set the font for consistency
+    doc.setFont("helvetica");
+
+    // Company Name and Header
+    doc.setFontSize(18);
+    doc.text(invoiceData.organizationName, 40, 50);
+    doc.setFontSize(11);
+    doc.text("Faktura", 40, 70);
+    doc.setFontSize(10);
+    doc.text(`Fakturadatum: ${invoiceData.invoiceDate}`, 40, 85);
+    doc.text(`Förfallodatum: ${invoiceData.dueDate}`, 40, 100);
+    doc.text(`Fakturanummer: ${invoiceData.invoiceNumber}`, 40, 115);
+
+    // Customer Information
+    doc.text(`Kundens namn: ${invoiceData.customerName}`, 300, 85);
+    doc.text(`Kundens adress: ${invoiceData.customerAddress}`, 300, 100);
+    doc.text(
+      `Organisationsnummer: ${invoiceData.organizationNumber}`,
+      300,
+      115
+    );
+
+    // Invoice Items Table
+    const tableColumns = [
+      { title: "Beskrivning", dataKey: "productName" },
+      { title: "Antal", dataKey: "quantity" },
+      { title: "À-pris", dataKey: "unitPrice" },
+      { title: "Belopp", dataKey: "amount" },
+      { title: "Moms", dataKey: "vatRate" },
+    ];
+
+    const tableRows = invoiceData.items.map((item) => [
+      item.productName,
+      item.quantity.toString(),
+      item.unitPrice.toString(),
+      item.quantity && item.unitPrice
+        ? (item.quantity * item.unitPrice).toFixed(2)
+        : "0.00", // Calculate amount
+      item.vatRate + "%", // Append % sign to vatRate
+    ]);
+
     autoTable(doc, {
       head: [tableColumns],
       body: tableRows,
-      startY: 20,
+      startY: 130,
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [200, 200, 200] },
+      columnStyles: {
+        0: { cellWidth: "auto", halign: "left" },
+        1: { halign: "right" },
+        2: { halign: "right" },
+        3: { halign: "right" },
+        4: { halign: "right" },
+      },
     });
 
+    // Footer
+    let finalY = doc.lastAutoTable.finalY || 130; // Get the final Y of the autoTable
+    doc.setFontSize(10);
+    doc.text(
+      "Vänligen betala beloppet till bankgironummer 1234-5678",
+      40,
+      finalY + 30
+    );
+
+    // Total Sum
+    const total = invoiceData.items.reduce(
+      (sum, item) => sum + (item.quantity || 0) * (item.unitPrice || 0),
+      0
+    );
+    doc.setFontSize(11);
+    doc.text(`Total summa: ${total.toFixed(2)} SEK`, 40, finalY + 45);
+
+    console.log("Items:", invoiceData.items);
+    console.log("Table Rows:", tableRows);
+    // Output the PDF for preview
     doc.output("dataurlnewwindow");
   };
 
