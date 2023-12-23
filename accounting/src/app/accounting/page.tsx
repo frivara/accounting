@@ -92,8 +92,6 @@ const OrganisationsPage: React.FC = () => {
     }
   };
 
-  // Read items from database
-
   useEffect(() => {
     const accountQuery = query(collection(db, "organisations"));
     // calling the function below "unsubscribe" refers to disconnecting from the database after fetching the data needed
