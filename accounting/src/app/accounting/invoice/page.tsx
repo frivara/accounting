@@ -85,10 +85,9 @@ const InvoicePage = () => {
       format: "a4",
     });
 
-    // Set the font for consistency
+    // This sets the font for consistency
     doc.setFont("helvetica");
 
-    // Company Name and Header
     doc.setFontSize(18);
     doc.text(invoiceData.organizationName, 40, 50);
     doc.setFontSize(11);
@@ -98,7 +97,6 @@ const InvoicePage = () => {
     doc.text(`Förfallodatum: ${invoiceData.dueDate}`, 40, 100);
     doc.text(`Fakturanummer: ${invoiceData.invoiceNumber}`, 40, 115);
 
-    // Customer Information
     doc.text(`Kundens namn: ${invoiceData.customerName}`, 300, 85);
     doc.text(`Kundens adress: ${invoiceData.customerAddress}`, 300, 100);
     doc.text(
@@ -107,7 +105,6 @@ const InvoicePage = () => {
       115
     );
 
-    // Invoice Items Table
     const tableColumns = [
       { title: "Beskrivning", dataKey: "productName" },
       { title: "Antal", dataKey: "quantity" },
@@ -122,8 +119,8 @@ const InvoicePage = () => {
       item.unitPrice.toString(),
       item.quantity && item.unitPrice
         ? (item.quantity * item.unitPrice).toFixed(2)
-        : "0.00", // Calculate amount
-      item.vatRate + "%", // Append % sign to vatRate
+        : "0.00", // Calculates amount
+      item.vatRate + "%",
     ]);
 
     autoTable(doc, {
@@ -142,7 +139,7 @@ const InvoicePage = () => {
     });
 
     // Footer
-    let finalY = doc.lastAutoTable.finalY || 130; // Get the final Y of the autoTable
+    let finalY = doc.lastAutoTable.finalY || 130; // Get the final Y coordinate of the autoTable
     doc.setFontSize(10);
     doc.text(
       "Vänligen betala beloppet till bankgironummer 1234-5678",
@@ -173,192 +170,217 @@ const InvoicePage = () => {
     <Paper
       elevation={3}
       sx={{
-        marginLeft: "240px",
         padding: theme.spacing(2),
-        [theme.breakpoints.up("md")]: {
-          marginLeft: "240px",
-        },
+        marginLeft: "240px", // Adjust based on the navbar width
+        marginTop: theme.spacing(2),
+        overflow: "hidden",
+        maxWidth: "calc(100vw - ${theme.spacing(30)}px)", // Subtract navbar width from the viewport width
+        height: "calc(100vh - ${theme.spacing(4)}px)", // Adjust for the top margin
       }}
     >
       <Typography variant="h6" gutterBottom>
         Skapa Ny Faktura
       </Typography>
-      <Box component="form" onSubmit={handleSubmit} noValidate>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
-            <TextField
-              label="Organisationsnummer"
-              value={invoiceData.organizationNumber}
-              onChange={(e) =>
-                handleInputChange("organizationNumber", e.target.value)
-              }
-              fullWidth
-            />
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        noValidate
+        sx={{
+          height: "calc(100% - 48px)", // Subtract the height of the header
+          overflow: "auto",
+        }}
+      >
+        <Grid container spacing={2} sx={{ paddingRight: theme.spacing(30) }}>
+          <Grid container item spacing={2}>
+            <Grid item xs={4}>
+              <TextField
+                label="Organisationsnummer"
+                value={invoiceData.organizationNumber}
+                onChange={(e) =>
+                  handleInputChange("organizationNumber", e.target.value)
+                }
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                label="Momsregistreringsnummer"
+                value={invoiceData.vatNumber}
+                onChange={(e) => handleInputChange("vatNumber", e.target.value)}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                label="Organisationsnamn"
+                value={invoiceData.organizationName}
+                onChange={(e) =>
+                  handleInputChange("organizationName", e.target.value)
+                }
+                fullWidth
+              />
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              label="Momsregistreringsnummer"
-              value={invoiceData.vatNumber}
-              onChange={(e) => handleInputChange("vatNumber", e.target.value)}
-              fullWidth
-            />
+
+          <Grid container item spacing={2}>
+            <Grid item xs={4}>
+              <TextField
+                label="Kundens namn"
+                value={invoiceData.customerName}
+                onChange={(e) =>
+                  handleInputChange("customerName", e.target.value)
+                }
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                label="Kundens adress"
+                value={invoiceData.customerAddress}
+                onChange={(e) =>
+                  handleInputChange("customerAddress", e.target.value)
+                }
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                label="Kundnummer"
+                value={invoiceData.customerNumber}
+                onChange={(e) =>
+                  handleInputChange("customerNumber", e.target.value)
+                }
+                fullWidth
+              />
+            </Grid>
           </Grid>
-          <Grid item xs={12}>
-            <TextField
-              label="Organisationsnamn"
-              value={invoiceData.organizationName}
-              onChange={(e) =>
-                handleInputChange("organizationName", e.target.value)
-              }
-              fullWidth
-            />
+
+          <Grid container item spacing={2}>
+            <Grid item xs={4}>
+              <TextField
+                label="Fakturanummer"
+                value={invoiceData.invoiceNumber}
+                onChange={(e) =>
+                  handleInputChange("invoiceNumber", e.target.value)
+                }
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                label="Fakturadatum"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={invoiceData.invoiceDate}
+                onChange={(e) =>
+                  handleInputChange("invoiceDate", e.target.value)
+                }
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                label="Förfallodatum"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={invoiceData.dueDate}
+                onChange={(e) => handleInputChange("dueDate", e.target.value)}
+                fullWidth
+              />
+            </Grid>
           </Grid>
-          <Grid item xs={12}>
-            <TextField
-              label="Organisationens adress"
-              value={invoiceData.address}
-              onChange={(e) => handleInputChange("address", e.target.value)}
-              fullWidth
-            />
+
+          <Grid container item spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                label="Betalningsvillkor"
+                value={invoiceData.paymentTerms}
+                onChange={(e) =>
+                  handleInputChange("paymentTerms", e.target.value)
+                }
+                fullWidth
+              />
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              label="Kundens namn"
-              value={invoiceData.customerName}
-              onChange={(e) =>
-                handleInputChange("customerName", e.target.value)
-              }
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              label="Kundens adress"
-              value={invoiceData.customerAddress}
-              onChange={(e) =>
-                handleInputChange("customerAddress", e.target.value)
-              }
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              label="Kundnummer"
-              value={invoiceData.customerNumber}
-              onChange={(e) =>
-                handleInputChange("customerNumber", e.target.value)
-              }
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              label="Fakturanummer"
-              value={invoiceData.invoiceNumber}
-              onChange={(e) =>
-                handleInputChange("invoiceNumber", e.target.value)
-              }
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              label="Fakturadatum"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={invoiceData.invoiceDate}
-              onChange={(e) => handleInputChange("invoiceDate", e.target.value)}
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              label="Förfallodatum"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={invoiceData.dueDate}
-              onChange={(e) => handleInputChange("dueDate", e.target.value)}
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              label="Betalningsvillkor"
-              value={invoiceData.paymentTerms}
-              onChange={(e) =>
-                handleInputChange("paymentTerms", e.target.value)
-              }
-              fullWidth
-            />
-          </Grid>
+
           <Grid item xs={12}>
             <Typography variant="subtitle1">Fakturaposter</Typography>
-          </Grid>
-          {invoiceData.items.map((item, index) => (
-            <React.Fragment key={index}>
-              <Grid item xs={3}>
-                <TextField
-                  label="Produktnamn"
-                  value={item.productName}
-                  onChange={(e) =>
-                    updateItem(index, "productName", e.target.value)
-                  }
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="Enhet"
-                  value={item.unit}
-                  onChange={(e) => updateItem(index, "unit", e.target.value)}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="Antal"
-                  type="number"
-                  value={item.quantity}
-                  onChange={(e) =>
-                    updateItem(index, "quantity", e.target.value)
-                  }
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="Enhetspris"
-                  type="number"
-                  value={item.unitPrice}
-                  onChange={(e) =>
-                    updateItem(index, "unitPrice", e.target.value)
-                  }
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  label="Momssats"
-                  select
-                  SelectProps={{ native: true }}
-                  value={item.vatRate}
-                  onChange={(e) => updateItem(index, "vatRate", e.target.value)}
-                  fullWidth
-                >
-                  <option value="25">25%</option>
-                  <option value="12">12%</option>
-                  <option value="6">6%</option>
-                </TextField>
-              </Grid>
-            </React.Fragment>
-          ))}
-          <Grid item xs={12}>
-            <Button onClick={addItem} variant="outlined">
+            <Box sx={{ overflowY: "auto", maxHeight: "200px" }}>
+              {invoiceData.items.map((item, index) => (
+                <Grid container spacing={2} key={index}>
+                  <Grid item xs={3}>
+                    <TextField
+                      label="Produktnamn"
+                      value={item.productName}
+                      onChange={(e) =>
+                        updateItem(index, "productName", e.target.value)
+                      }
+                      fullWidth
+                      margin="normal"
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="Enhet"
+                      value={item.unit}
+                      onChange={(e) =>
+                        updateItem(index, "unit", e.target.value)
+                      }
+                      fullWidth
+                      margin="normal"
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="Antal"
+                      type="number"
+                      value={item.quantity}
+                      onChange={(e) =>
+                        updateItem(index, "quantity", e.target.value)
+                      }
+                      fullWidth
+                      margin="normal"
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="Enhetspris"
+                      type="number"
+                      value={item.unitPrice}
+                      onChange={(e) =>
+                        updateItem(index, "unitPrice", e.target.value)
+                      }
+                      fullWidth
+                      margin="normal"
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <TextField
+                      label="Momssats"
+                      select
+                      SelectProps={{ native: true }}
+                      value={item.vatRate}
+                      onChange={(e) =>
+                        updateItem(index, "vatRate", e.target.value)
+                      }
+                      fullWidth
+                      margin="normal"
+                    >
+                      <option value="25">25%</option>
+                      <option value="12">12%</option>
+                      <option value="6">6%</option>
+                    </TextField>
+                  </Grid>
+                </Grid>
+              ))}
+            </Box>
+            <Button onClick={addItem} variant="outlined" sx={{ mt: 2 }}>
               Lägg till artikel
             </Button>
           </Grid>
+
           <Grid item xs={12}>
-            <Button type="submit" variant="contained">
+            <Button type="submit" variant="contained" sx={{ mt: 2 }}>
               Generera faktura
             </Button>
           </Grid>
