@@ -4,6 +4,7 @@ import { TextField, Button, Box, Grid, Paper, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import "../../styles/globals.css";
 
 interface Item {
   productName: string;
@@ -45,6 +46,8 @@ const InvoicePage = () => {
       { productName: "", unit: "", quantity: 0, unitPrice: 0, vatRate: "25" },
     ],
   });
+  const [logo, setLogo] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>("");
 
   const theme = useTheme();
 
@@ -85,26 +88,30 @@ const InvoicePage = () => {
       format: "a4",
     });
 
-    // This sets the font for consistency
+    // Set the font for consistency
     doc.setFont("helvetica");
 
+    // Optionally, add a logo
+    if (logoPreview) {
+      doc.addImage(logoPreview, "JPEG", 40, 30, 120, 60); // Adjust the position and size as needed
+    }
+
+    // Title and company info
     doc.setFontSize(18);
-    doc.text(invoiceData.organizationName, 40, 50);
+    doc.text(invoiceData.organizationName, 40, 150);
     doc.setFontSize(11);
-    doc.text("Faktura", 40, 70);
+    doc.text("Faktura", 300, 30);
     doc.setFontSize(10);
-    doc.text(`Fakturadatum: ${invoiceData.invoiceDate}`, 40, 85);
-    doc.text(`Förfallodatum: ${invoiceData.dueDate}`, 40, 100);
-    doc.text(`Fakturanummer: ${invoiceData.invoiceNumber}`, 40, 115);
+    doc.text(`Fakturadatum: ${invoiceData.invoiceDate}`, 300, 45);
+    doc.text(`Förfallodatum: ${invoiceData.dueDate}`, 300, 60);
+    doc.text(`Fakturanummer: ${invoiceData.invoiceNumber}`, 300, 75);
 
-    doc.text(`Kundens namn: ${invoiceData.customerName}`, 300, 85);
-    doc.text(`Kundens adress: ${invoiceData.customerAddress}`, 300, 100);
-    doc.text(
-      `Organisationsnummer: ${invoiceData.organizationNumber}`,
-      300,
-      115
-    );
+    // Customer info
+    doc.text(`Kundens namn: ${invoiceData.customerName}`, 40, 200);
+    doc.text(`Kundens adress: ${invoiceData.customerAddress}`, 40, 215);
+    doc.text(`Organisationsnummer: ${invoiceData.organizationNumber}`, 40, 230);
 
+    // Table of invoice items
     const tableColumns = [
       { title: "Beskrivning", dataKey: "productName" },
       { title: "Antal", dataKey: "quantity" },
@@ -123,40 +130,48 @@ const InvoicePage = () => {
       item.vatRate + "%",
     ]);
 
+    // Generate the table
     autoTable(doc, {
       head: [tableColumns],
       body: tableRows,
-      startY: 130,
-      styles: { fontSize: 9, cellPadding: 3 },
+      startY: 250,
+      margin: { horizontal: 40 },
+      styles: { fontSize: 9, cellPadding: 3, overflow: "linebreak" },
       headStyles: { fillColor: [200, 200, 200] },
       columnStyles: {
-        0: { cellWidth: "auto", halign: "left" },
-        1: { halign: "right" },
-        2: { halign: "right" },
-        3: { halign: "right" },
-        4: { halign: "right" },
+        0: { cellWidth: 120 },
+        1: { cellWidth: 40, halign: "right" },
+        2: { cellWidth: 40, halign: "right" },
+        3: { cellWidth: 40, halign: "right" },
+        4: { cellWidth: 40, halign: "right" },
       },
     });
 
-    // Footer
-    let finalY = doc.lastAutoTable.finalY || 130; // Get the final Y coordinate of the autoTable
+    // Calculate totals
+    let subtotal = 0;
+    let vat = 0;
+    invoiceData.items.forEach((item: any) => {
+      let amount: any = item.quantity * item.unitPrice;
+      let vatAmount = amount * (parseFloat(item.vatRate) / 100);
+      subtotal += amount;
+      vat += vatAmount;
+    });
+    let total = subtotal + vat;
+
+    // Footer with totals
+    let finalY = doc.lastAutoTable.finalY || 250;
     doc.setFontSize(10);
+    doc.text(`Subtotal: ${subtotal.toFixed(2)} SEK`, 400, finalY + 20);
+    doc.text(`Moms: ${vat.toFixed(2)} SEK`, 400, finalY + 35);
+    doc.text(`Total summa: ${total.toFixed(2)} SEK`, 400, finalY + 50);
+
+    // Payment instructions
     doc.text(
       "Vänligen betala beloppet till bankgironummer 1234-5678",
       40,
-      finalY + 30
+      finalY + 20
     );
 
-    // Total Sum
-    const total = invoiceData.items.reduce(
-      (sum, item) => sum + (item.quantity || 0) * (item.unitPrice || 0),
-      0
-    );
-    doc.setFontSize(11);
-    doc.text(`Total summa: ${total.toFixed(2)} SEK`, 40, finalY + 45);
-
-    console.log("Items:", invoiceData.items);
-    console.log("Table Rows:", tableRows);
     // Output the PDF for preview
     doc.output("dataurlnewwindow");
   };
@@ -166,16 +181,28 @@ const InvoicePage = () => {
     generatePDF();
   };
 
+  const deleteItem = (index: number) => {
+    const newItems = [...invoiceData.items];
+    newItems.splice(index, 1);
+    setInvoiceData({ ...invoiceData, items: newItems });
+  };
+
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files ? event.target.files[0] : null;
+    setLogo(file);
+    setLogoPreview(file ? URL.createObjectURL(file) : "");
+  };
+
   return (
     <Paper
       elevation={3}
       sx={{
         padding: theme.spacing(2),
-        marginLeft: "240px", // Adjust based on the navbar width
+        marginLeft: "240px",
         marginTop: theme.spacing(2),
-        overflow: "hidden",
-        maxWidth: "calc(100vw - ${theme.spacing(30)}px)", // Subtract navbar width from the viewport width
-        height: "calc(100vh - ${theme.spacing(4)}px)", // Adjust for the top margin
+        overflowX: "hidden",
+        maxWidth: `calc(100vw - ${theme.spacing(30)})`,
+        height: `calc(100vh - ${theme.spacing(4)})`,
       }}
     >
       <Typography variant="h6" gutterBottom>
@@ -186,12 +213,49 @@ const InvoicePage = () => {
         onSubmit={handleSubmit}
         noValidate
         sx={{
-          height: "calc(100% - 48px)", // Subtract the height of the header
+          height: "calc(100% - 48px)",
           overflow: "auto",
         }}
       >
+        {/* Upload Logo Button */}
+        <Grid
+          container
+          item
+          xs={4}
+          justifyContent="flex-end"
+          alignItems="center"
+          id="upload-logo"
+        >
+          <Box>
+            <input
+              accept="image/*"
+              id="logo-upload"
+              type="file"
+              onChange={handleLogoUpload}
+              style={{ display: "none" }}
+            />
+            <label htmlFor="logo-upload">
+              <Button variant="contained" component="span">
+                Ladda upp logotyp
+              </Button>
+            </label>
+          </Box>
+          {logoPreview && (
+            <Typography id="logo-uploaded">Logotyp uppladdad</Typography>
+          )}
+        </Grid>
         <Grid container spacing={2} sx={{ paddingRight: theme.spacing(30) }}>
           <Grid container item spacing={2}>
+            <Grid item xs={4}>
+              <TextField
+                label="Organisationsnamn"
+                value={invoiceData.organizationName}
+                onChange={(e) =>
+                  handleInputChange("organizationName", e.target.value)
+                }
+                fullWidth
+              />
+            </Grid>
             <Grid item xs={4}>
               <TextField
                 label="Organisationsnummer"
@@ -207,16 +271,6 @@ const InvoicePage = () => {
                 label="Momsregistreringsnummer"
                 value={invoiceData.vatNumber}
                 onChange={(e) => handleInputChange("vatNumber", e.target.value)}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={4}>
-              <TextField
-                label="Organisationsnamn"
-                value={invoiceData.organizationName}
-                onChange={(e) =>
-                  handleInputChange("organizationName", e.target.value)
-                }
                 fullWidth
               />
             </Grid>
@@ -307,7 +361,7 @@ const InvoicePage = () => {
             <Typography variant="subtitle1">Fakturaposter</Typography>
             <Box sx={{ overflowY: "auto", maxHeight: "200px" }}>
               {invoiceData.items.map((item, index) => (
-                <Grid container spacing={2} key={index}>
+                <Grid container spacing={2} key={index} alignItems="center">
                   <Grid item xs={3}>
                     <TextField
                       label="Produktnamn"
@@ -371,9 +425,18 @@ const InvoicePage = () => {
                       <option value="6">6%</option>
                     </TextField>
                   </Grid>
+                  <Grid item xs={1}>
+                    <Button
+                      onClick={() => deleteItem(index)}
+                      variant="contained"
+                      color="error"
+                    >
+                      Ta bort
+                    </Button>
+                  </Grid>
                 </Grid>
               ))}
-            </Box>
+            </Box>{" "}
             <Button onClick={addItem} variant="outlined" sx={{ mt: 2 }}>
               Lägg till artikel
             </Button>
