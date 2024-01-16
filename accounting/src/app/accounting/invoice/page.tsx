@@ -1,4 +1,5 @@
 "use client";
+"use client";
 import React, { useState } from "react";
 import {
   Document,
@@ -6,9 +7,7 @@ import {
   Text,
   View,
   StyleSheet,
-  BlobProvider,
   Image,
-  PDFViewer,
   pdf,
 } from "@react-pdf/renderer";
 
@@ -25,7 +24,7 @@ interface Item {
 
 interface InvoiceData {
   organizationNumber: string;
-  vatNumber: string;
+  vatNumber?: string; // Made optional
   organizationName: string;
   customerName: string;
   customerAddress: {
@@ -34,7 +33,7 @@ interface InvoiceData {
     postalTown: string;
   };
   customerNumber: string;
-  invoiceNumber: string;
+  invoiceNumber: string; // Made mandatory
   invoiceDate: string;
   dueDate: string;
   paymentTerms: string;
@@ -160,22 +159,35 @@ const InvoicePage = () => {
       },
     ],
   });
-  const [logo, setLogo] = useState("");
+  const [logo, setLogo] = useState<any>(null);
 
   const theme = useTheme();
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files ? event.target.files[0] : null;
+
     if (file) {
+      const fileType = file.type;
+      if (fileType !== "image/jpeg" && fileType !== "image/png") {
+        alert("Please upload an image of type JPG or PNG.");
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (e: any) => {
         setLogo(e.target.result);
+        console.log("Logo uploaded");
       };
       reader.readAsDataURL(file);
+      console.log(logo);
     }
   };
 
   const handleCreateInvoicePDF = async () => {
+    if (!invoiceData.invoiceNumber) {
+      alert("Fakturanummer är obligatoriskt.");
+      return;
+    }
     try {
       const doc = <InvoicePDF invoiceData={invoiceData} />; // Creates thr document element
       const asPdf = pdf(); // Initializes the PDF renderer
@@ -220,6 +232,7 @@ const InvoicePage = () => {
   const InvoicePDF = ({ invoiceData }: { invoiceData: InvoiceData }) => (
     <Document>
       <Page size="A4" style={styles.page}>
+        {/* Logo display logic */}
         <View
           style={{
             width: 150,
@@ -615,6 +628,17 @@ const InvoicePage = () => {
                 value={invoiceData.dueDate}
                 onChange={(e) =>
                   setInvoiceData({ ...invoiceData, dueDate: e.target.value })
+                }
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item>
+              <TextField
+                label="Momsregistreringsnummer"
+                fullWidth
+                value={invoiceData.vatNumber}
+                onChange={(e) =>
+                  setInvoiceData({ ...invoiceData, vatNumber: e.target.value })
                 }
                 InputLabelProps={{ shrink: true }}
               />
