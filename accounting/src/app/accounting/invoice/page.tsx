@@ -1,5 +1,4 @@
 "use client";
-"use client";
 import React, { useState } from "react";
 import {
   Document,
@@ -17,8 +16,8 @@ import { useTheme } from "@mui/material/styles";
 interface Item {
   productName: string;
   unit: string;
-  quantity: number | "";
-  unitPrice: number | "";
+  quantity: number;
+  unitPrice: number;
   vatRate: string;
 }
 
@@ -130,7 +129,7 @@ const InvoicePage = () => {
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({
     organizationNumber: "555-123456",
     vatNumber: "SE555123456701",
-    organizationName: "Example Company AB",
+    organizationName: "Schnauzer AB",
     customerName: "Customer AB",
     customerAddress: {
       street: "Example Street 42",
@@ -144,15 +143,15 @@ const InvoicePage = () => {
     paymentTerms: "30",
     items: [
       {
-        productName: "Consulting Services",
-        unit: "hours",
+        productName: "Konsultarbete",
+        unit: "timmar",
         quantity: 10,
         unitPrice: 1000,
         vatRate: "25",
       },
       {
-        productName: "Web Development",
-        unit: "hours",
+        productName: "Webutveckling",
+        unit: "timmar",
         quantity: 8,
         unitPrice: 1200,
         vatRate: "25",
@@ -175,11 +174,22 @@ const InvoicePage = () => {
 
       const reader = new FileReader();
       reader.onload = (e: any) => {
-        setLogo(e.target.result);
-        console.log("Logo uploaded");
+        const result = e.target.result;
+        // Check if result is a string and starts with 'data:image/png' or 'data:image/jpeg'
+        if (
+          typeof result === "string" &&
+          /^data:image\/(png|jpeg);base64,/.test(result)
+        ) {
+          setLogo(result);
+          console.log("Logo uploaded");
+        } else {
+          console.error("Failed to load logo as a base64 string");
+        }
+      };
+      reader.onerror = (e) => {
+        console.error("Error reading file", e.target!.error);
       };
       reader.readAsDataURL(file);
-      console.log(logo);
     }
   };
 
@@ -188,13 +198,18 @@ const InvoicePage = () => {
       alert("Fakturanummer är obligatoriskt.");
       return;
     }
+
+    const completeItems = invoiceData.items.filter(isItemComplete);
+
     try {
-      const doc = <InvoicePDF invoiceData={invoiceData} />; // Creates thr document element
-      const asPdf = pdf(); // Initializes the PDF renderer
-      asPdf.updateContainer(doc); // Passes the document element directly
-      const blob = await asPdf.toBlob(); // Generates the blob
-      const pdfUrl = URL.createObjectURL(blob); // Creates a URL for the blob
-      window.open(pdfUrl, "_blank"); // Opens the PDF in a new tab
+      const doc = (
+        <InvoicePDF invoiceData={{ ...invoiceData, items: completeItems }} />
+      );
+      const asPdf = pdf();
+      asPdf.updateContainer(doc);
+      const blob = await asPdf.toBlob();
+      const pdfUrl = URL.createObjectURL(blob);
+      window.open(pdfUrl, "_blank");
     } catch (error) {
       console.error("Failed to create invoice PDF", error);
     }
@@ -240,7 +255,13 @@ const InvoicePage = () => {
             backgroundColor: logo ? "transparent" : "#FFFFFF",
           }}
         >
-          {logo && <Image src={logo} style={{ width: 150, height: 75 }} />}
+          {logo ? (
+            <Image src={logo} style={{ width: 150, height: 75 }} />
+          ) : (
+            <View
+              style={{ width: 150, height: 75, backgroundColor: "#FFFFFF" }}
+            />
+          )}
         </View>
 
         <Text style={styles.title}>{invoiceData.organizationName}</Text>
@@ -426,7 +447,7 @@ const InvoicePage = () => {
       ...invoiceData,
       items: [
         ...invoiceData.items,
-        { productName: "", unit: "", quantity: "", unitPrice: "", vatRate: "" },
+        { productName: "", unit: "", quantity: 0, unitPrice: 0, vatRate: "" },
       ],
     });
   };
@@ -439,6 +460,16 @@ const InvoicePage = () => {
   const fileInputRef = React.createRef<HTMLInputElement>();
   const handleLogoButtonClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const isItemComplete = (item: Item) => {
+    return (
+      item.productName &&
+      item.unit &&
+      item.quantity &&
+      item.unitPrice &&
+      item.vatRate
+    );
   };
 
   return (
@@ -653,6 +684,7 @@ const InvoicePage = () => {
             border: "1px solid grey",
             padding: 2,
             marginTop: 2,
+            minWidth: "80vw",
           }}
         >
           {invoiceData.items.map((item, index) => (
@@ -692,8 +724,9 @@ const InvoicePage = () => {
                   onChange={(e) => {
                     const newItems = [...invoiceData.items];
                     newItems[index].quantity = e.target.value
-                      ? parseInt(e.target.value)
-                      : "";
+                      ? parseFloat(e.target.value)
+                      : 0;
+                    parseFloat(e.target.value);
                     setInvoiceData({ ...invoiceData, items: newItems });
                   }}
                 />
@@ -709,7 +742,8 @@ const InvoicePage = () => {
                     const newItems = [...invoiceData.items];
                     newItems[index].unitPrice = e.target.value
                       ? parseFloat(e.target.value)
-                      : "";
+                      : 0;
+                    parseFloat(e.target.value);
                     setInvoiceData({ ...invoiceData, items: newItems });
                   }}
                 />
@@ -741,6 +775,7 @@ const InvoicePage = () => {
                     setInvoiceData({ ...invoiceData, items: newItems });
                   }}
                   SelectProps={{ native: true }}
+                  InputLabelProps={{ shrink: true }}
                 >
                   {["6%", "12%", "25%"].map((option) => (
                     <option key={option} value={option}>
