@@ -25,3 +25,29 @@ export interface AccountDetails {
   name: string;
   accountingPlan: string;
 }
+
+export interface Item {
+  productName: string;
+  unit: string;
+  quantity: number;
+  unitPrice: number;
+  vatRate: string;
+}
+
+export interface InvoiceData {
+  organizationNumber: string;
+  vatNumber?: string; // Made optional
+  organizationName: string;
+  customerName: string;
+  customerAddress: {
+    street: string;
+    postalCode: string;
+    postalTown: string;
+  };
+  customerNumber: string;
+  invoiceNumber: string; // Made mandatory
+  invoiceDate: string;
+  dueDate: string;
+  paymentTerms: string;
+  items: Item[];
+}

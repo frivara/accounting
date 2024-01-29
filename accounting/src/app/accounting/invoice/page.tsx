@@ -12,32 +12,11 @@ import {
 
 import { TextField, Button, Box, Grid, Paper, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-
-interface Item {
-  productName: string;
-  unit: string;
-  quantity: number;
-  unitPrice: number;
-  vatRate: string;
-}
-
-interface InvoiceData {
-  organizationNumber: string;
-  vatNumber?: string; // Made optional
-  organizationName: string;
-  customerName: string;
-  customerAddress: {
-    street: string;
-    postalCode: string;
-    postalTown: string;
-  };
-  customerNumber: string;
-  invoiceNumber: string; // Made mandatory
-  invoiceDate: string;
-  dueDate: string;
-  paymentTerms: string;
-  items: Item[];
-}
+import DeleteIcon from "@mui/icons-material/Delete";
+import { Item, InvoiceData } from "@/app/helpers/interfaces";
+import { NAVBAR_WIDTH } from "@/app/helpers/layoutConstants";
+import Tooltip from "@mui/material/Tooltip";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 
 const styles = StyleSheet.create({
   page: {
@@ -147,19 +126,20 @@ const InvoicePage = () => {
         unit: "timmar",
         quantity: 10,
         unitPrice: 1000,
-        vatRate: "25",
+        vatRate: "25%",
       },
       {
         productName: "Webutveckling",
         unit: "timmar",
         quantity: 8,
         unitPrice: 1200,
-        vatRate: "25",
+        vatRate: "25%",
       },
     ],
   });
   const [logo, setLogo] = useState<any>(null);
-
+  const [additionalText, setAdditionalText] = useState("");
+  const inputFieldWidth = "50%";
   const theme = useTheme();
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -230,16 +210,12 @@ const InvoicePage = () => {
       0
     );
     const total = subtotal + vatTotal;
-    const rounding = 0.25;
-    const deduction = 7500.0;
-    const amountToPay = total - deduction + rounding;
+    const amountToPay = total;
 
     return {
       subtotal: subtotal.toFixed(2),
       vatTotal: vatTotal.toFixed(2),
-      rounding: rounding.toFixed(2),
       total: total.toFixed(2),
-      deduction: deduction.toFixed(2),
       amountToPay: amountToPay.toFixed(2),
     };
   };
@@ -250,13 +226,13 @@ const InvoicePage = () => {
         {/* Logo display logic */}
         <View
           style={{
-            width: 150,
-            height: 75,
+            maxWidth: 300,
+            maxHeight: 150,
             backgroundColor: logo ? "transparent" : "#FFFFFF",
           }}
         >
           {logo ? (
-            <Image src={logo} style={{ width: 150, height: 75 }} />
+            <Image src={logo} style={{ maxWidth: 200, maxHeight: 100 }} />
           ) : (
             <View
               style={{ width: 150, height: 75, backgroundColor: "#FFFFFF" }}
@@ -265,6 +241,22 @@ const InvoicePage = () => {
         </View>
 
         <Text style={styles.title}>{invoiceData.organizationName}</Text>
+        <View
+          style={{
+            maxWidth: "40%",
+            maxHeight: "18vh%",
+            marginTop: "10mm",
+            marginBottom: "-52mm",
+            padding: "5mm",
+            borderWidth: 1,
+            borderColor: "#000",
+            borderStyle: "solid",
+          }}
+        >
+          <Text style={{ fontSize: 9, overflow: "hidden" }}>
+            {additionalText}
+          </Text>
+        </View>
 
         <View style={styles.header}>
           <View style={styles.invoiceInfo}>
@@ -363,7 +355,7 @@ const InvoicePage = () => {
                 </Text>
               </View>
               <View style={styles.tableCol}>
-                <Text style={styles.tableCell}>{item.vatRate}%</Text>
+                <Text style={styles.tableCell}>{item.vatRate}</Text>
               </View>
             </View>
           ))}
@@ -397,19 +389,12 @@ const InvoicePage = () => {
                 label: "Moms:",
                 value: calculateInvoiceTotals(invoiceData.items).vatTotal,
               },
-              {
-                label: "Avrundning:",
-                value: calculateInvoiceTotals(invoiceData.items).rounding,
-              },
+
               {
                 label: "Summa totalt:",
                 value: calculateInvoiceTotals(invoiceData.items).total,
               },
-              {
-                label: "Rotavdrag:",
-                value:
-                  "-" + calculateInvoiceTotals(invoiceData.items).deduction,
-              },
+
               {
                 label: "Att betala:",
                 value: calculateInvoiceTotals(invoiceData.items).amountToPay,
@@ -430,7 +415,6 @@ const InvoicePage = () => {
           </View>
         </View>
 
-        {/* Footer */}
         <View fixed style={styles.footer}>
           <Text>
             Org.nr: {invoiceData.organizationNumber} | Momsreg.nr:{" "}
@@ -477,19 +461,19 @@ const InvoicePage = () => {
       elevation={3}
       sx={{
         padding: theme.spacing(2),
-        marginLeft: "240px",
+        marginLeft: NAVBAR_WIDTH,
         marginTop: theme.spacing(2),
-        overflow: "hidden",
-        maxWidth: `calc(100vw - ${theme.spacing(30)})`,
-        height: `calc(95vh - ${theme.spacing(4)})`,
+        maxWidth: `calc(100vw - ${NAVBAR_WIDTH})`,
+        height: `auto`,
       }}
     >
       <Typography variant="h6" gutterBottom>
         Skapa Ny Faktura
       </Typography>
       <Box component="form" noValidate sx={{ height: "calc(100% - 48px)" }}>
-        <Grid item xs={12} container spacing={2}>
-          <Grid item xs={4} container direction="column" spacing={1}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={4} container direction="column" spacing={1}>
+            {/* Organization Name */}
             <Grid item>
               <TextField
                 label="Organisationsnamn"
@@ -501,8 +485,10 @@ const InvoicePage = () => {
                     organizationName: e.target.value,
                   })
                 }
+                sx={{ maxWidth: "100%" }}
               />
             </Grid>
+            {/* Organization Number */}
             <Grid item>
               <TextField
                 label="Organisationsnummer"
@@ -514,9 +500,23 @@ const InvoicePage = () => {
                     organizationNumber: e.target.value,
                   })
                 }
+                sx={{ maxWidth: "100%" }}
               />
             </Grid>
-
+            {/* VAT Number */}
+            <Grid item>
+              <TextField
+                label="Momsregistreringsnummer"
+                fullWidth
+                value={invoiceData.vatNumber}
+                onChange={(e) =>
+                  setInvoiceData({ ...invoiceData, vatNumber: e.target.value })
+                }
+                InputLabelProps={{ shrink: true }}
+                sx={{ maxWidth: "100%" }}
+              />
+            </Grid>
+            {/* Logo Upload */}
             <Grid item>
               <input
                 type="file"
@@ -528,9 +528,18 @@ const InvoicePage = () => {
               <Button variant="contained" onClick={handleLogoButtonClick}>
                 Ladda upp logotyp
               </Button>
+              <Tooltip
+                title="Logotypen kan max vara 200px bred och 100px hög"
+                placement="right"
+              >
+                <HelpOutlineIcon
+                  style={{ marginLeft: "8px", cursor: "help" }}
+                />
+              </Tooltip>
             </Grid>
 
-            {logo && (
+            {/* Display Uploaded Logo */}
+            {logo ? (
               <Grid item>
                 <img
                   src={logo}
@@ -542,10 +551,94 @@ const InvoicePage = () => {
                   }}
                 />
               </Grid>
+            ) : (
+              <Grid item>
+                <div
+                  style={{
+                    height: 100,
+                    maxWidth: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: "30%",
+                    fontSize: "1em", // You can adjust the font size to your preference
+                  }}
+                >
+                  <span>Ingen logotyp uppladdad</span>{" "}
+                  {/* This text is optional */}
+                </div>
+              </Grid>
             )}
+
+            <Grid item xs={12}>
+              <TextField
+                label="Ytterligare text"
+                fullWidth
+                multiline // Enables multiline input
+                rows={4} // Sets the number of lines
+                value={additionalText}
+                onChange={(e) => setAdditionalText(e.target.value)}
+                sx={{
+                  maxWidth: "100%",
+                  "& .MuiInputBase-root": {
+                    height: "auto",
+                  },
+                }}
+              />
+            </Grid>
+          </Grid>
+          <Grid item xs={12} md={4} container direction="column" spacing={1}>
+            {/* Invoice Number */}
+            <Grid item>
+              <TextField
+                label="Fakturanummer"
+                fullWidth
+                value={invoiceData.invoiceNumber}
+                onChange={(e) =>
+                  setInvoiceData({
+                    ...invoiceData,
+                    invoiceNumber: e.target.value,
+                  })
+                }
+                sx={{ maxWidth: inputFieldWidth }}
+              />
+            </Grid>
+            {/* Invoice Date */}
+            <Grid item>
+              <TextField
+                label="Fakturadatum"
+                type="date"
+                fullWidth
+                value={invoiceData.invoiceDate}
+                onChange={(e) =>
+                  setInvoiceData({
+                    ...invoiceData,
+                    invoiceDate: e.target.value,
+                  })
+                }
+                sx={{ maxWidth: inputFieldWidth }}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            {/* Due Date */}
+            <Grid item>
+              <TextField
+                label="Förfallodatum"
+                type="date"
+                fullWidth
+                value={invoiceData.dueDate}
+                onChange={(e) =>
+                  setInvoiceData({ ...invoiceData, dueDate: e.target.value })
+                }
+                sx={{ maxWidth: inputFieldWidth }}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
           </Grid>
 
-          <Grid item xs={4} container direction="column" spacing={1}>
+          {/* Customer Info */}
+          <Grid item xs={12} md={4} container direction="column" spacing={1}>
+            {/* Customer Name */}
             <Grid item>
               <TextField
                 label="Kundens namn"
@@ -557,8 +650,10 @@ const InvoicePage = () => {
                     customerName: e.target.value,
                   })
                 }
+                sx={{ maxWidth: inputFieldWidth }}
               />
             </Grid>
+            {/* Customer Address */}
             <Grid item>
               <TextField
                 label="Kundadress"
@@ -573,8 +668,10 @@ const InvoicePage = () => {
                     },
                   })
                 }
+                sx={{ maxWidth: inputFieldWidth }}
               />
             </Grid>
+            {/* Customer Postal Code */}
             <Grid item>
               <TextField
                 label="Postnummer"
@@ -589,8 +686,10 @@ const InvoicePage = () => {
                     },
                   })
                 }
+                sx={{ maxWidth: inputFieldWidth }}
               />
             </Grid>
+            {/* Customer Postal Town */}
             <Grid item>
               <TextField
                 label="Postort"
@@ -605,8 +704,10 @@ const InvoicePage = () => {
                     },
                   })
                 }
+                sx={{ maxWidth: inputFieldWidth }}
               />
             </Grid>
+            {/* Customer Number */}
             <Grid item>
               <TextField
                 label="Kundnummer"
@@ -618,201 +719,144 @@ const InvoicePage = () => {
                     customerNumber: e.target.value,
                   })
                 }
+                sx={{ maxWidth: inputFieldWidth }}
               />
             </Grid>
           </Grid>
-
-          <Grid item xs={4} container direction="column" spacing={1}>
-            <Grid item>
-              <TextField
-                label="Fakturanummer"
-                fullWidth
-                value={invoiceData.invoiceNumber}
-                onChange={(e) =>
-                  setInvoiceData({
-                    ...invoiceData,
-                    invoiceNumber: e.target.value,
-                  })
-                }
-              />
-            </Grid>
-            <Grid item>
-              <TextField
-                label="Fakturadatum"
-                type="date"
-                fullWidth
-                value={invoiceData.invoiceDate}
-                onChange={(e) =>
-                  setInvoiceData({
-                    ...invoiceData,
-                    invoiceDate: e.target.value,
-                  })
-                }
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item>
-              <TextField
-                label="Förfallodatum"
-                type="date"
-                fullWidth
-                value={invoiceData.dueDate}
-                onChange={(e) =>
-                  setInvoiceData({ ...invoiceData, dueDate: e.target.value })
-                }
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item>
-              <TextField
-                label="Momsregistreringsnummer"
-                fullWidth
-                value={invoiceData.vatNumber}
-                onChange={(e) =>
-                  setInvoiceData({ ...invoiceData, vatNumber: e.target.value })
-                }
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-          </Grid>
+          {/* Invoice Items */}
+          <Box
+            sx={{
+              border: "1px solid grey",
+              padding: 2,
+              marginTop: 2,
+              minWidth: "80vw",
+            }}
+          >
+            {invoiceData.items.map((item, index) => (
+              <Grid key={index} container spacing={2} alignItems="center">
+                {/* Item Description */}
+                <Grid item xs={2}>
+                  <TextField
+                    label="Beskrivning"
+                    fullWidth
+                    value={item.productName}
+                    onChange={(e) => {
+                      const newItems = [...invoiceData.items];
+                      newItems[index].productName = e.target.value;
+                      setInvoiceData({ ...invoiceData, items: newItems });
+                    }}
+                  />
+                </Grid>
+                {/* Item Unit */}
+                <Grid item xs={2}>
+                  <TextField
+                    label="Enhet"
+                    fullWidth
+                    value={item.unit}
+                    onChange={(e) => {
+                      const newItems = [...invoiceData.items];
+                      newItems[index].unit = e.target.value;
+                      setInvoiceData({ ...invoiceData, items: newItems });
+                    }}
+                  />
+                </Grid>
+                {/* Item Quantity */}
+                <Grid item xs={2}>
+                  <TextField
+                    label="Antal"
+                    fullWidth
+                    type="number"
+                    value={item.quantity.toString()}
+                    onChange={(e) => {
+                      const newItems = [...invoiceData.items];
+                      newItems[index].quantity =
+                        parseFloat(e.target.value) || 0;
+                      setInvoiceData({ ...invoiceData, items: newItems });
+                    }}
+                  />
+                </Grid>
+                {/* Item Unit Price */}
+                <Grid item xs={2}>
+                  <TextField
+                    label="Á-pris"
+                    fullWidth
+                    type="number"
+                    value={item.unitPrice.toString()}
+                    onChange={(e) => {
+                      const newItems = [...invoiceData.items];
+                      newItems[index].unitPrice =
+                        parseFloat(e.target.value) || 0;
+                      setInvoiceData({ ...invoiceData, items: newItems });
+                    }}
+                  />
+                </Grid>
+                {/* Item Amount */}
+                <Grid item xs={2}>
+                  <TextField
+                    label="Belopp"
+                    fullWidth
+                    type="number"
+                    value={(
+                      (item.quantity || 0) * (item.unitPrice || 0)
+                    ).toFixed(2)}
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                  />
+                </Grid>
+                {/* Item VAT Rate */}
+                <Grid item xs={1}>
+                  <TextField
+                    select
+                    label="Moms"
+                    fullWidth
+                    value={item.vatRate}
+                    onChange={(e) => {
+                      const newItems = [...invoiceData.items];
+                      newItems[index].vatRate = e.target.value;
+                      setInvoiceData({ ...invoiceData, items: newItems });
+                    }}
+                    SelectProps={{ native: true }}
+                    InputLabelProps={{ shrink: true }}
+                  >
+                    {["0%", "6%", "12%", "25%"].map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </TextField>
+                </Grid>
+                {/* Remove Item Button */}
+                <Grid item xs={1}>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={() => handleRemoveItem(index)}
+                  >
+                    <DeleteIcon />
+                  </Button>
+                </Grid>
+              </Grid>
+            ))}
+          </Box>
+          {/* Add Item Button */}
+          <Button
+            variant="contained"
+            onClick={handleAddItem}
+            sx={{ marginTop: 2 }}
+          >
+            Lägg till rad
+          </Button>
+          {/* Create Invoice Button */}
+          <Button
+            variant="contained"
+            onClick={handleCreateInvoicePDF}
+            sx={{ marginTop: 3 }}
+            style={{ position: "relative", left: "67vw", bottom: "10px" }}
+          >
+            Skapa faktura
+          </Button>
         </Grid>
-
-        <Box
-          sx={{
-            maxHeight: 150,
-            overflowY: "auto",
-            border: "1px solid grey",
-            padding: 2,
-            marginTop: 2,
-            minWidth: "80vw",
-          }}
-        >
-          {invoiceData.items.map((item, index) => (
-            <Grid key={index} container spacing={2} alignItems="center">
-              <Grid item xs={2}>
-                <TextField
-                  label="Beskrivning"
-                  fullWidth
-                  value={item.productName}
-                  onChange={(e) => {
-                    const newItems = [...invoiceData.items];
-                    newItems[index].productName = e.target.value;
-                    setInvoiceData({ ...invoiceData, items: newItems });
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={2}>
-                <TextField
-                  label="Enhet"
-                  fullWidth
-                  value={item.unit}
-                  onChange={(e) => {
-                    const newItems = [...invoiceData.items];
-                    newItems[index].unit = e.target.value;
-                    setInvoiceData({ ...invoiceData, items: newItems });
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={2}>
-                <TextField
-                  label="Antal"
-                  fullWidth
-                  type="number"
-                  value={item.quantity.toString()}
-                  onChange={(e) => {
-                    const newItems = [...invoiceData.items];
-                    newItems[index].quantity = e.target.value
-                      ? parseFloat(e.target.value)
-                      : 0;
-                    parseFloat(e.target.value);
-                    setInvoiceData({ ...invoiceData, items: newItems });
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={2}>
-                <TextField
-                  label="Á-pris"
-                  fullWidth
-                  type="number"
-                  value={item.unitPrice.toString()}
-                  onChange={(e) => {
-                    const newItems = [...invoiceData.items];
-                    newItems[index].unitPrice = e.target.value
-                      ? parseFloat(e.target.value)
-                      : 0;
-                    parseFloat(e.target.value);
-                    setInvoiceData({ ...invoiceData, items: newItems });
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={2}>
-                <TextField
-                  label="Belopp"
-                  fullWidth
-                  type="number"
-                  value={(
-                    (item.quantity || 0) * (item.unitPrice || 0)
-                  ).toString()}
-                  InputProps={{
-                    readOnly: true,
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={1}>
-                <TextField
-                  select
-                  label="Moms"
-                  fullWidth
-                  value={item.vatRate}
-                  onChange={(e) => {
-                    const newItems = [...invoiceData.items];
-                    newItems[index].vatRate = e.target.value;
-                    setInvoiceData({ ...invoiceData, items: newItems });
-                  }}
-                  SelectProps={{ native: true }}
-                  InputLabelProps={{ shrink: true }}
-                >
-                  {["6%", "12%", "25%"].map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </TextField>
-              </Grid>
-
-              <Grid item xs={1}>
-                <Button
-                  variant="contained"
-                  color="error"
-                  onClick={() => handleRemoveItem(index)}
-                >
-                  Ta bort
-                </Button>
-              </Grid>
-            </Grid>
-          ))}
-        </Box>
-        <Button
-          variant="contained"
-          onClick={handleAddItem}
-          sx={{ marginTop: 2 }}
-        >
-          Lägg till rad
-        </Button>
-
-        <Button
-          variant="contained"
-          onClick={handleCreateInvoicePDF}
-          sx={{ marginTop: 3 }}
-          style={{ left: "85%", top: "85%", position: "absolute" }}
-        >
-          Skapa faktura
-        </Button>
       </Box>
     </Paper>
   );

@@ -1,11 +1,7 @@
 "use client";
 import React from "react";
 import {
-  AppBar,
-  Toolbar,
   Typography,
-  Button,
-  Stack,
   Drawer,
   IconButton,
   List,
@@ -14,8 +10,7 @@ import {
 } from "@mui/material";
 import { useRouter, usePathname } from "next/navigation";
 import LogoutIcon from "@mui/icons-material/Logout";
-
-const drawerWidth = 240;
+import { NAVBAR_WIDTH } from "../helpers/layoutConstants";
 
 const Navbar: React.FC = () => {
   const router = useRouter();
@@ -36,10 +31,10 @@ const Navbar: React.FC = () => {
   return (
     <Drawer
       sx={{
-        width: drawerWidth,
+        width: NAVBAR_WIDTH,
         flexShrink: 0,
         "& .MuiDrawer-paper": {
-          width: drawerWidth,
+          width: NAVBAR_WIDTH,
           boxSizing: "border-box",
           backgroundColor: "#333",
           color: "white",
@@ -63,7 +58,7 @@ const Navbar: React.FC = () => {
                 textDecoration: "underline",
               },
               "&.MuiListItem-button:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.08)", // Slight hover effect
+                backgroundColor: "rgba(255, 255, 255, 0.08)",
               },
             }}
           >
