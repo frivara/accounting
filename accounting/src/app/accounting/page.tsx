@@ -80,7 +80,7 @@ const OrganisationsPage: React.FC = () => {
         id: Math.random().toString(36).substring(7),
         firestoreId: "",
         name,
-        accountingPlan: selectedTemplateId, // Use the selected template ID here
+        accountingPlan: selectedTemplateId,
       };
 
       await addDoc(collection(db, "organisations"), newAccount);

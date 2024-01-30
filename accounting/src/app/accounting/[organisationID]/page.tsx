@@ -24,7 +24,7 @@ import FiscalYearsList from "../../components/FiscalYearsList";
 import { AccountDetails } from "@/app/helpers/interfaces";
 import { MyContext } from "@/app/helpers/context";
 
-const OrganisationPage: React.FC = () => {
+const OrganisationId: React.FC = () => {
   const [organisation, setOrganisation] = useState<AccountDetails | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const { globalState } = useContext<any>(MyContext);
@@ -191,4 +191,4 @@ const OrganisationPage: React.FC = () => {
   );
 };
 
-export default OrganisationPage;
+export default OrganisationId;

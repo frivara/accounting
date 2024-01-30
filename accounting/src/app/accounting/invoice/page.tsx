@@ -1,5 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Document,
   Page,
@@ -101,6 +102,18 @@ const styles = StyleSheet.create({
     borderTopWidth: 2,
     borderTopStyle: "solid",
     borderTopColor: "#bfbfbf",
+  },
+  logoContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#FFFFFF",
+    height: 100,
+    width: 200,
+  },
+  logo: {
+    objectFit: "contain",
+    height: "100%",
+    width: "auto",
   },
 });
 
@@ -224,20 +237,8 @@ const InvoicePage = () => {
     <Document>
       <Page size="A4" style={styles.page}>
         {/* Logo display logic */}
-        <View
-          style={{
-            maxWidth: 300,
-            maxHeight: 150,
-            backgroundColor: logo ? "transparent" : "#FFFFFF",
-          }}
-        >
-          {logo ? (
-            <Image src={logo} style={{ maxWidth: 200, maxHeight: 100 }} />
-          ) : (
-            <View
-              style={{ width: 150, height: 75, backgroundColor: "#FFFFFF" }}
-            />
-          )}
+        <View style={styles.logoContainer}>
+          {logo && <Image src={logo} style={styles.logo} />}
         </View>
 
         <Text style={styles.title}>{invoiceData.organizationName}</Text>
@@ -456,6 +457,10 @@ const InvoicePage = () => {
     );
   };
 
+  useEffect(() => {
+    window.scrollTo(0, document.body.scrollHeight);
+  }, [invoiceData.items.length]);
+
   return (
     <Paper
       elevation={3}
@@ -561,11 +566,10 @@ const InvoicePage = () => {
                     alignItems: "center",
                     justifyContent: "center",
                     marginRight: "30%",
-                    fontSize: "1em", // You can adjust the font size to your preference
+                    fontSize: "1em",
                   }}
                 >
                   <span>Ingen logotyp uppladdad</span>{" "}
-                  {/* This text is optional */}
                 </div>
               </Grid>
             )}
@@ -574,8 +578,8 @@ const InvoicePage = () => {
               <TextField
                 label="Ytterligare text"
                 fullWidth
-                multiline // Enables multiline input
-                rows={4} // Sets the number of lines
+                multiline
+                rows={4}
                 value={additionalText}
                 onChange={(e) => setAdditionalText(e.target.value)}
                 sx={{
@@ -733,9 +737,16 @@ const InvoicePage = () => {
             }}
           >
             {invoiceData.items.map((item, index) => (
-              <Grid key={index} container spacing={2} alignItems="center">
+              <Grid
+                key={index}
+                container
+                justifyContent="flex-start"
+                spacing={1}
+                alignItems="center"
+                marginBlock={1}
+              >
                 {/* Item Description */}
-                <Grid item xs={2}>
+                <Grid item xs={3}>
                   <TextField
                     label="Beskrivning"
                     fullWidth
@@ -748,7 +759,7 @@ const InvoicePage = () => {
                   />
                 </Grid>
                 {/* Item Unit */}
-                <Grid item xs={2}>
+                <Grid item xs={1}>
                   <TextField
                     label="Enhet"
                     fullWidth
@@ -761,7 +772,7 @@ const InvoicePage = () => {
                   />
                 </Grid>
                 {/* Item Quantity */}
-                <Grid item xs={2}>
+                <Grid item xs={1}>
                   <TextField
                     label="Antal"
                     fullWidth
@@ -805,7 +816,7 @@ const InvoicePage = () => {
                   />
                 </Grid>
                 {/* Item VAT Rate */}
-                <Grid item xs={1}>
+                <Grid item xs={2}>
                   <TextField
                     select
                     label="Moms"
@@ -826,8 +837,12 @@ const InvoicePage = () => {
                     ))}
                   </TextField>
                 </Grid>
-                {/* Remove Item Button */}
-                <Grid item xs={1}>
+                {/* Fixed space (optional) */}
+                <Grid item xs={1} style={{ flexBasis: "auto" }}>
+                  {/* Empty Grid item to create space */}
+                </Grid>
+                {/* Remove Item Button - stays in place */}
+                <Grid item>
                   <Button
                     variant="contained"
                     color="error"
