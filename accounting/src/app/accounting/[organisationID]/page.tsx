@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useContext } from "react";
-import { onSnapshot, doc, deleteDoc } from "firebase/firestore";
+import { onSnapshot, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { db } from "../../db/firebase";
 import Link from "next/link";
 import {
@@ -16,6 +16,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  TextField,
+  Tooltip,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
@@ -23,15 +25,25 @@ import { usePathname, useRouter } from "next/navigation";
 import FiscalYearsList from "../../components/FiscalYearsList";
 import { AccountDetails } from "@/app/helpers/interfaces";
 import { MyContext } from "@/app/helpers/context";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import EditIcon from "@mui/icons-material/Edit";
 
 const OrganisationId: React.FC = () => {
   const [organisation, setOrganisation] = useState<AccountDetails | null>(null);
+  const [name, setName] = useState(organisation ? organisation.name : "");
+  const [number, setNumber] = useState("");
+  const [vatNumber, setVatNumber] = useState("");
+  const [isOrgNameEditable, setIsOrgNameEditable] = useState(false);
+  const [isOrgNumEditable, setIsOrgNumEditable] = useState(false);
+  const [isVatNumEditable, setIsVatNumEditable] = useState(false);
+  const [logo, setLogo] = useState<any>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const { globalState } = useContext<any>(MyContext);
   const templates = globalState.chartOfAccountsTemplates;
 
   const pathname = usePathname();
   const router = useRouter();
+  const organisationId = pathname.split("/").pop();
 
   const getTemplateNameById = (templateId: any) => {
     const allTemplates = [
@@ -45,22 +57,18 @@ const OrganisationId: React.FC = () => {
   };
 
   useEffect(() => {
-    const organisationId = pathname.split("/").pop();
-
     if (!organisationId) {
       return;
     }
-
     const accountRef = doc(db, "organisations", organisationId);
-
-    const unsubscribe = onSnapshot(accountRef, (doc) => {
-      if (doc.exists()) {
-        const accountData = {
-          name: doc.data().name,
-          accountingPlan: doc.data().accountingPlan,
-          id: doc.id,
-        };
+    const unsubscribe = onSnapshot(accountRef, (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const accountData: any = docSnapshot.data();
         setOrganisation(accountData);
+        setName(accountData.name);
+        setNumber(accountData.number);
+        setVatNumber(accountData.vatNumber);
+        setLogo(accountData.logo);
       }
     });
 
@@ -77,6 +85,16 @@ const OrganisationId: React.FC = () => {
     );
   }
 
+  const handleSaveDetails = async () => {
+    const orgRef = doc(db, "organisations", organisationId!);
+    await updateDoc(orgRef, {
+      name: name,
+      number: number,
+      vatNumber: vatNumber,
+      logo: logo,
+    });
+  };
+
   const openDeleteDialog = () => {
     setOpenDialog(true);
   };
@@ -90,6 +108,42 @@ const OrganisationId: React.FC = () => {
       await deleteDoc(doc(db, "organisations", organisation.id));
       router.push(`/accounting/`);
       closeDeleteDialog();
+    }
+  };
+
+  const fileInputRef = React.createRef<HTMLInputElement>();
+  const handleLogoButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files ? event.target.files[0] : null;
+
+    if (file) {
+      const fileType = file.type;
+      if (fileType !== "image/jpeg" && fileType !== "image/png") {
+        alert("Please upload an image of type JPG or PNG.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const result = e.target.result;
+        // Check if result is a string and starts with 'data:image/png' or 'data:image/jpeg'
+        if (
+          typeof result === "string" &&
+          /^data:image\/(png|jpeg);base64,/.test(result)
+        ) {
+          setLogo(result);
+          console.log("Logo uploaded");
+        } else {
+          console.error("Failed to load logo as a base64 string");
+        }
+      };
+      reader.onerror = (e) => {
+        console.error("Error reading file", e.target!.error);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -113,7 +167,7 @@ const OrganisationId: React.FC = () => {
   );
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex", marginTop: "5%" }}>
       <Drawer
         variant="permanent"
         sx={{
@@ -147,10 +201,146 @@ const OrganisationId: React.FC = () => {
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Card sx={{ p: 2 }}>
-              <Typography variant="h5">{organisation?.name}</Typography>
+              <Box display="flex" alignItems="center" marginBottom="8px">
+                <TextField
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  fullWidth
+                  margin="normal"
+                  InputProps={{
+                    readOnly: !isOrgNameEditable,
+                    disableUnderline: !isOrgNameEditable,
+                    style: {
+                      fontSize: "1.25rem", // h5 font size
+                      fontWeight: "bold",
+                      cursor: isOrgNameEditable ? "text" : "default",
+                      border: isOrgNameEditable ? "1px solid grey" : "none",
+                      borderRadius: "4px",
+                      backgroundColor: isOrgNameEditable ? "transparent" : "",
+                    },
+                  }}
+                  variant="standard" // Use "standard" to get rid of the background color and make it look more like the original Typography
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  hiddenLabel
+                />
+                <Button
+                  onClick={() => setIsOrgNameEditable(!isOrgNameEditable)}
+                  sx={{ ml: 1 }} // Adds some left margin (margin left = ml) to the button
+                >
+                  <EditIcon />
+                </Button>
+              </Box>
+
               <Typography variant="body1">
                 Bokföringsplan:{" "}
                 {getTemplateNameById(organisation?.accountingPlan)}
+                <Box display="flex" alignItems="center" marginBottom="8px">
+                  <TextField
+                    label="Organisationsnummer"
+                    value={number}
+                    onChange={(e) => setNumber(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                    InputProps={{
+                      readOnly: !isOrgNumEditable,
+                      disableUnderline: !isOrgNumEditable,
+                      style: {
+                        cursor: isOrgNumEditable ? "text" : "default",
+                        border: isOrgNumEditable ? "1px solid grey" : "none",
+                        borderRadius: "4px",
+                      },
+                    }}
+                    variant="standard"
+                  />
+                  <Button
+                    onClick={() => setIsOrgNumEditable(!isOrgNumEditable)}
+                  >
+                    <EditIcon />
+                  </Button>
+                </Box>
+                <Box display="flex" alignItems="center" marginBottom="8px">
+                  <TextField
+                    label="Momsregistreringsnummer"
+                    value={vatNumber}
+                    onChange={(e) => setVatNumber(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                    InputProps={{
+                      readOnly: !isVatNumEditable,
+                      disableUnderline: !isVatNumEditable,
+                      style: {
+                        cursor: isVatNumEditable ? "text" : "default",
+                        border: isVatNumEditable ? "1px solid grey" : "none",
+                        borderRadius: "4px",
+                      },
+                    }}
+                    variant="standard"
+                  />
+                  <Button
+                    onClick={() => setIsVatNumEditable(!isVatNumEditable)}
+                  >
+                    <EditIcon />
+                  </Button>
+                </Box>
+                <Grid item>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleLogoUpload}
+                    accept="image/*"
+                    style={{ display: "none" }}
+                  />
+                  <Button variant="contained" onClick={handleLogoButtonClick}>
+                    Ladda upp logotyp
+                  </Button>
+                  <Tooltip
+                    title="Logotypen kan max vara 200px bred och 100px hög"
+                    placement="right"
+                  >
+                    <HelpOutlineIcon
+                      style={{ marginLeft: "8px", cursor: "help" }}
+                    />
+                  </Tooltip>
+                </Grid>
+                {logo ? (
+                  <Grid item>
+                    <img
+                      src={logo}
+                      alt="Uploaded Logo"
+                      style={{
+                        maxHeight: 100,
+                        maxWidth: "100%",
+                        objectFit: "contain",
+                      }}
+                    />
+                  </Grid>
+                ) : (
+                  <Grid item>
+                    <div
+                      style={{
+                        height: 100,
+                        maxWidth: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: "30%",
+                        fontSize: "1em",
+                      }}
+                    >
+                      <span>Ingen logotyp uppladdad</span>{" "}
+                    </div>
+                  </Grid>
+                )}
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSaveDetails}
+                  sx={{ mt: 2 }}
+                >
+                  Spara detaljer
+                </Button>
               </Typography>
               <Button
                 variant="contained"

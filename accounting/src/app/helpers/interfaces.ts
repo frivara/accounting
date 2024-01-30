@@ -5,14 +5,14 @@ export interface FiscalYearSpan {
   end: Date | null;
 }
 
-export interface Account {
+export interface Organization {
   accountCode: string;
   accountName: string;
   balance: number;
 }
 
 export interface BalanceEntry {
-  balance: Account;
+  balance: Organization;
 }
 
 export interface BalanceData {
@@ -23,6 +23,9 @@ export interface BalanceData {
 export interface AccountDetails {
   id: string;
   name: string;
+  number: number;
+  vatRate: string;
+  logo: any;
   accountingPlan: string;
 }
 

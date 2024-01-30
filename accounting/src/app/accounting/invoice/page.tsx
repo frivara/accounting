@@ -11,13 +11,27 @@ import {
   pdf,
 } from "@react-pdf/renderer";
 
-import { TextField, Button, Box, Grid, Paper, Typography } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Box,
+  Grid,
+  Paper,
+  Typography,
+  MenuItem,
+  Select,
+  OutlinedInput,
+  FormControl,
+  InputLabel,
+} from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Item, InvoiceData } from "@/app/helpers/interfaces";
 import { NAVBAR_WIDTH } from "@/app/helpers/layoutConstants";
 import Tooltip from "@mui/material/Tooltip";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import { collection, onSnapshot, query } from "firebase/firestore";
+import { db } from "@/app/db/firebase";
 
 const styles = StyleSheet.create({
   page: {
@@ -152,6 +166,10 @@ const InvoicePage = () => {
   });
   const [logo, setLogo] = useState<any>(null);
   const [additionalText, setAdditionalText] = useState("");
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [selectedOrg, setSelectedOrg] = useState("");
+  const [selectedOrgId, setSelectedOrgId] = useState(""); // State for dropdown selection
+  const [organizationName, setOrganizationName] = useState("");
   const inputFieldWidth = "50%";
   const theme = useTheme();
 
@@ -442,6 +460,22 @@ const InvoicePage = () => {
     setInvoiceData({ ...invoiceData, items: newItems });
   };
 
+  useEffect(() => {
+    const accountQuery = query(collection(db, "organisations"));
+    // calling the function below "unsubscribe" refers to disconnecting from the database after fetching the data needed
+    const unsubscribe = onSnapshot(accountQuery, (querySnapshot) => {
+      let itemsArray: any = [];
+
+      querySnapshot.forEach((doc) => {
+        itemsArray.push({ ...doc.data(), firestoreId: doc.id });
+      });
+      setAccounts(itemsArray);
+      console.log(itemsArray);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const fileInputRef = React.createRef<HTMLInputElement>();
   const handleLogoButtonClick = () => {
     fileInputRef.current?.click();
@@ -461,6 +495,54 @@ const InvoicePage = () => {
     window.scrollTo(0, document.body.scrollHeight);
   }, [invoiceData.items.length]);
 
+  useEffect(() => {
+    const fetchAccounts = () => {
+      const q = query(collection(db, "organisations"));
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const orgs = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setAccounts(orgs);
+      });
+      return () => unsubscribe();
+    };
+    fetchAccounts();
+  }, []);
+
+  const handleOrganizationSelect = (event: { target: { value: any } }) => {
+    const selectedOrgId = event.target.value;
+    const selectedOrg = accounts.find((org) => org.id === selectedOrgId);
+    if (selectedOrg) {
+      setOrganizationName(selectedOrg.name);
+      setInvoiceData({
+        ...invoiceData,
+        organizationName: selectedOrg.name,
+        organizationNumber: selectedOrg.number,
+        vatNumber: selectedOrg.vatNumber,
+      });
+      setLogo(selectedOrg.logo);
+    }
+    setSelectedOrgId(selectedOrgId);
+  };
+
+  const handleOrganizationNameChange = (event: { target: { value: any } }) => {
+    const newOrganizationName = event.target.value;
+    setOrganizationName(newOrganizationName);
+    // Update invoice data only if the new name does not match any existing organization
+    const orgExists = accounts.some((org) => org.name === newOrganizationName);
+    if (!orgExists) {
+      setInvoiceData({
+        ...invoiceData,
+        organizationName: newOrganizationName,
+      });
+    }
+  };
+
+  useEffect(() => {
+    setSelectedOrg(invoiceData.organizationName);
+  }, [invoiceData.organizationName]);
+
   return (
     <Paper
       elevation={3}
@@ -479,17 +561,31 @@ const InvoicePage = () => {
         <Grid container spacing={2}>
           <Grid item xs={12} md={4} container direction="column" spacing={1}>
             {/* Organization Name */}
+            <Grid item xs={12} md={2}>
+              <FormControl fullWidth>
+                <InputLabel id="organization-select-label">
+                  Mina Organisationer
+                </InputLabel>
+                <Select
+                  labelId="organization-select-label"
+                  value={selectedOrgId}
+                  onChange={handleOrganizationSelect}
+                  input={<OutlinedInput label="Mina Organisationer" />}
+                >
+                  {accounts.map((account) => (
+                    <MenuItem key={account.id} value={account.id}>
+                      {account.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
             <Grid item>
               <TextField
                 label="Organisationsnamn"
                 fullWidth
-                value={invoiceData.organizationName}
-                onChange={(e) =>
-                  setInvoiceData({
-                    ...invoiceData,
-                    organizationName: e.target.value,
-                  })
-                }
+                value={organizationName}
+                onChange={handleOrganizationNameChange}
                 sx={{ maxWidth: "100%" }}
               />
             </Grid>
