@@ -174,9 +174,10 @@ const InvoicePage = () => {
   const [logo, setLogo] = useState<any>(null);
   const [additionalText, setAdditionalText] = useState("");
   const [accounts, setAccounts] = useState<any[]>([]);
-  const [selectedOrg, setSelectedOrg] = useState("");
   const [selectedOrgId, setSelectedOrgId] = useState("");
   const [organizationName, setOrganizationName] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+
   const inputFieldWidth = "50%";
   const theme = useTheme();
 
@@ -400,7 +401,9 @@ const InvoicePage = () => {
             top: 100,
           }}
         >
-          <Text>Vänligen betala till bankgiro 1234-5678</Text>
+          <Text>
+            Vänligen betala till {paymentMethod || "bankgiro 1234-5678"}
+          </Text>
         </View>
 
         <View
@@ -568,7 +571,15 @@ const InvoicePage = () => {
       </Typography>
       <Box component="form" noValidate sx={{ height: "calc(100% - 48px)" }}>
         <Grid container spacing={2}>
-          <Grid item xs={12} md={4} container direction="column" spacing={1}>
+          <Grid
+            item
+            xs={12}
+            md={4}
+            container
+            direction="column"
+            spacing={1}
+            style={{ marginBottom: "-10%" }}
+          >
             {/* Organization Name */}
             <Grid item xs={12} md={2}>
               <FormControl fullWidth>
@@ -692,9 +703,31 @@ const InvoicePage = () => {
                 }}
                 helperText={`${additionalText.length}/400`}
                 sx={{
-                  maxWidth: "100%",
+                  maxWidth: "80%",
                   "& .MuiInputBase-root": {
                     height: "auto",
+                  },
+                }}
+              />
+            </Grid>
+            <Grid
+              item
+              xs={12}
+              md={4}
+              style={{ marginTop: "-9%", height: "20%" }}
+            >
+              <TextField
+                label="Vänligen betala till..."
+                placeholder="Bankgiro 1234-5678..."
+                fullWidth
+                multiline
+                rows={2}
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                sx={{
+                  maxWidth: "80%",
+                  "& .MuiInputBase-root": {
+                    height: "30%",
                   },
                 }}
               />
@@ -708,7 +741,7 @@ const InvoicePage = () => {
             container
             direction="column"
             spacing={1}
-            style={{ marginLeft: "8%" }}
+            style={{ marginLeft: "8%", marginBottom: "-20%" }}
           >
             {/* Invoice Number */}
             <Grid item>
@@ -859,7 +892,7 @@ const InvoicePage = () => {
               border: "1px solid grey",
               borderRadius: "5px",
               padding: 2,
-              marginTop: 2,
+              bottom: 100,
               minWidth: "80vw",
               marginLeft: "2%",
             }}
