@@ -45,6 +45,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 10,
     left: 300,
+    bottom: 101,
     width: "50%",
   },
   invoiceInfo: {
@@ -63,10 +64,15 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 16,
+    top: 13,
     fontWeight: "bold",
   },
   details: {
     marginBottom: 10,
+    height: 100,
+    textAlign: "left",
+    paddingTop: 1,
+    paddingBottom: 1,
   },
   table: {
     display: "flex",
@@ -76,6 +82,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRightWidth: 0,
     borderBottomWidth: 0,
+    bottom: 60,
   },
   tableRow: {
     margin: "auto",
@@ -111,7 +118,7 @@ const styles = StyleSheet.create({
   footer: {
     fontSize: 10,
     textAlign: "center",
-    marginTop: 25,
+    marginTop: 40,
     paddingTop: 10,
     borderTopWidth: 2,
     borderTopStyle: "solid",
@@ -136,9 +143,9 @@ const InvoicePage = () => {
     organizationNumber: "555-123456",
     vatNumber: "SE555123456701",
     organizationName: "Schnauzer AB",
-    customerName: "Customer AB",
+    customerName: "Kund AB",
     customerAddress: {
-      street: "Example Street 42",
+      street: "Kundvägen 42",
       postalCode: "123 45",
       postalTown: "Stockholm",
     },
@@ -168,7 +175,7 @@ const InvoicePage = () => {
   const [additionalText, setAdditionalText] = useState("");
   const [accounts, setAccounts] = useState<any[]>([]);
   const [selectedOrg, setSelectedOrg] = useState("");
-  const [selectedOrgId, setSelectedOrgId] = useState(""); // State for dropdown selection
+  const [selectedOrgId, setSelectedOrgId] = useState("");
   const [organizationName, setOrganizationName] = useState("");
   const inputFieldWidth = "50%";
   const theme = useTheme();
@@ -186,7 +193,7 @@ const InvoicePage = () => {
       const reader = new FileReader();
       reader.onload = (e: any) => {
         const result = e.target.result;
-        // Check if result is a string and starts with 'data:image/png' or 'data:image/jpeg'
+        // Checks if result is a string and starts with 'data:image/png' or 'data:image/jpeg'
         if (
           typeof result === "string" &&
           /^data:image\/(png|jpeg);base64,/.test(result)
@@ -262,17 +269,23 @@ const InvoicePage = () => {
         <Text style={styles.title}>{invoiceData.organizationName}</Text>
         <View
           style={{
-            maxWidth: "40%",
-            maxHeight: "18vh%",
-            marginTop: "10mm",
-            marginBottom: "-52mm",
-            padding: "5mm",
+            width: "50%",
+            height: "100px",
+            padding: "2mm",
             borderWidth: 1,
             borderColor: "#000",
             borderStyle: "solid",
+            top: 30,
           }}
         >
-          <Text style={{ fontSize: 9, overflow: "hidden" }}>
+          <Text
+            style={{
+              fontSize: 10,
+              lineHeight: 1.2,
+              overflow: "hidden",
+              textAlign: "left",
+            }}
+          >
             {additionalText}
           </Text>
         </View>
@@ -539,10 +552,6 @@ const InvoicePage = () => {
     }
   };
 
-  useEffect(() => {
-    setSelectedOrg(invoiceData.organizationName);
-  }, [invoiceData.organizationName]);
-
   return (
     <Paper
       elevation={3}
@@ -647,7 +656,7 @@ const InvoicePage = () => {
                   alt="Uploaded Logo"
                   style={{
                     maxHeight: 100,
-                    maxWidth: "100%",
+                    maxWidth: 200,
                     objectFit: "contain",
                   }}
                 />
@@ -670,7 +679,7 @@ const InvoicePage = () => {
               </Grid>
             )}
 
-            <Grid item xs={12}>
+            <Grid item xs={12} md={4}>
               <TextField
                 label="Ytterligare text"
                 fullWidth
@@ -678,6 +687,10 @@ const InvoicePage = () => {
                 rows={4}
                 value={additionalText}
                 onChange={(e) => setAdditionalText(e.target.value)}
+                inputProps={{
+                  maxLength: 400,
+                }}
+                helperText={`${additionalText.length}/400`}
                 sx={{
                   maxWidth: "100%",
                   "& .MuiInputBase-root": {
@@ -687,7 +700,16 @@ const InvoicePage = () => {
               />
             </Grid>
           </Grid>
-          <Grid item xs={12} md={4} container direction="column" spacing={1}>
+
+          <Grid
+            item
+            xs={12}
+            md={4}
+            container
+            direction="column"
+            spacing={1}
+            style={{ marginLeft: "8%" }}
+          >
             {/* Invoice Number */}
             <Grid item>
               <TextField
@@ -737,7 +759,15 @@ const InvoicePage = () => {
           </Grid>
 
           {/* Customer Info */}
-          <Grid item xs={12} md={4} container direction="column" spacing={1}>
+          <Grid
+            item
+            xs={12}
+            md={4}
+            container
+            direction="column"
+            spacing={1}
+            style={{ marginLeft: "-10%" }}
+          >
             {/* Customer Name */}
             <Grid item>
               <TextField
@@ -827,9 +857,11 @@ const InvoicePage = () => {
           <Box
             sx={{
               border: "1px solid grey",
+              borderRadius: "5px",
               padding: 2,
               marginTop: 2,
               minWidth: "80vw",
+              marginLeft: "2%",
             }}
           >
             {invoiceData.items.map((item, index) => (
@@ -842,7 +874,7 @@ const InvoicePage = () => {
                 marginBlock={1}
               >
                 {/* Item Description */}
-                <Grid item xs={3}>
+                <Grid item xs={4}>
                   <TextField
                     label="Beskrivning"
                     fullWidth
@@ -883,7 +915,7 @@ const InvoicePage = () => {
                   />
                 </Grid>
                 {/* Item Unit Price */}
-                <Grid item xs={2}>
+                <Grid item xs={1}>
                   <TextField
                     label="Á-pris"
                     fullWidth
@@ -954,7 +986,7 @@ const InvoicePage = () => {
           <Button
             variant="contained"
             onClick={handleAddItem}
-            sx={{ marginTop: 2 }}
+            sx={{ marginTop: 2, marginLeft: 3.5 }}
           >
             Lägg till rad
           </Button>
@@ -963,7 +995,7 @@ const InvoicePage = () => {
             variant="contained"
             onClick={handleCreateInvoicePDF}
             sx={{ marginTop: 3 }}
-            style={{ position: "relative", left: "67vw", bottom: "10px" }}
+            style={{ position: "relative", left: "65vw", bottom: "10px" }}
           >
             Skapa faktura
           </Button>
