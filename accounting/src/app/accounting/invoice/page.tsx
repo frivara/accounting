@@ -581,7 +581,7 @@ const InvoicePage = () => {
             style={{ marginBottom: "-10%" }}
           >
             {/* Organization Name */}
-            <Grid item xs={12} md={2}>
+            <Grid item xs={12} md={2} style={{ marginBottom: "-14%" }}>
               <FormControl fullWidth>
                 <InputLabel id="organization-select-label">
                   Mina Organisationer
@@ -637,8 +637,32 @@ const InvoicePage = () => {
                 sx={{ maxWidth: "100%" }}
               />
             </Grid>
+            <Grid
+              item
+              xs={12}
+              md={4}
+              style={{
+                height: "20%",
+              }}
+            >
+              <TextField
+                label="Vänligen betala till..."
+                placeholder="Bankgiro 1234-5678..."
+                fullWidth
+                multiline
+                rows={1}
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                sx={{
+                  maxWidth: "100%",
+                  "& .MuiInputBase-root": {
+                    height: "20%",
+                  },
+                }}
+              />
+            </Grid>
             {/* Logo Upload */}
-            <Grid item>
+            <Grid item style={{ position: "relative", bottom: "22vh" }}>
               <input
                 type="file"
                 ref={fileInputRef}
@@ -661,7 +685,7 @@ const InvoicePage = () => {
 
             {/* Display Uploaded Logo */}
             {logo ? (
-              <Grid item>
+              <Grid item style={{ position: "relative", bottom: "22vh" }}>
                 <img
                   src={logo}
                   alt="Uploaded Logo"
@@ -673,7 +697,7 @@ const InvoicePage = () => {
                 />
               </Grid>
             ) : (
-              <Grid item>
+              <Grid item style={{ position: "relative", bottom: "22vh" }}>
                 <div
                   style={{
                     height: 100,
@@ -695,7 +719,7 @@ const InvoicePage = () => {
                 label="Ytterligare text"
                 fullWidth
                 multiline
-                rows={4}
+                rows={12}
                 value={additionalText}
                 onChange={(e) => setAdditionalText(e.target.value)}
                 inputProps={{
@@ -703,31 +727,9 @@ const InvoicePage = () => {
                 }}
                 helperText={`${additionalText.length}/400`}
                 sx={{
-                  maxWidth: "80%",
+                  maxWidth: "100%",
                   "& .MuiInputBase-root": {
                     height: "auto",
-                  },
-                }}
-              />
-            </Grid>
-            <Grid
-              item
-              xs={12}
-              md={4}
-              style={{ marginTop: "-9%", height: "20%" }}
-            >
-              <TextField
-                label="Vänligen betala till..."
-                placeholder="Bankgiro 1234-5678..."
-                fullWidth
-                multiline
-                rows={2}
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                sx={{
-                  maxWidth: "80%",
-                  "& .MuiInputBase-root": {
-                    height: "30%",
                   },
                 }}
               />
@@ -741,7 +743,12 @@ const InvoicePage = () => {
             container
             direction="column"
             spacing={1}
-            style={{ marginLeft: "8%", marginBottom: "-20%" }}
+            style={{
+              marginLeft: "14%",
+              marginBottom: "-20%",
+              position: "relative",
+              right: "2%",
+            }}
           >
             {/* Invoice Number */}
             <Grid item>
@@ -799,7 +806,7 @@ const InvoicePage = () => {
             container
             direction="column"
             spacing={1}
-            style={{ marginLeft: "-10%" }}
+            style={{ marginLeft: "-17%", position: "relative", left: "8%" }}
           >
             {/* Customer Name */}
             <Grid item>
