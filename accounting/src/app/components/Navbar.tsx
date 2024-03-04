@@ -26,6 +26,7 @@ const Navbar: React.FC = () => {
     { text: "Bokföring", path: "/accounting" },
     { text: "Kontoplaner", path: "/accounting/chartofaccounts" },
     { text: "Skapa faktura", path: "/accounting/invoice" },
+    { text: "Rapporter", path: "/accounting/reports" },
   ];
 
   return (

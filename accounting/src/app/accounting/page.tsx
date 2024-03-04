@@ -76,17 +76,16 @@ const OrganisationsPage: React.FC = () => {
     }
 
     try {
-      const newAccount: Account = {
-        id: Math.random().toString(36).substring(7),
-        firestoreId: "",
+      const docRef = await addDoc(collection(db, "organisations"), {
         name,
         accountingPlan: selectedTemplateId,
-      };
+        // Do not set id or firestoreId here, Firebase will create an id automatically
+      });
 
-      await addDoc(collection(db, "organisations"), newAccount);
+      // The new organization's Firestore ID is docRef.id
+      console.log("New organization created with ID: ", docRef.id);
 
-      setName("");
-      setSelectedTemplateId(null); // Reset the selected template ID
+      // ... rest of your code to reset form and update state/context
     } catch (error) {
       console.error(error);
     }

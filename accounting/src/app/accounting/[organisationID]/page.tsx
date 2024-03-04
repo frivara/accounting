@@ -57,6 +57,8 @@ const OrganisationId: React.FC = () => {
   };
 
   useEffect(() => {
+    console.log("Organisations-id: " + organisationId);
+
     if (!organisationId) {
       return;
     }
@@ -363,7 +365,7 @@ const OrganisationId: React.FC = () => {
                 color="primary"
                 startIcon={<AddCircleOutlineIcon />}
                 component={Link}
-                href={`/accounting/${organisation?.id}/fiscalYears/new`}
+                href={`/accounting/${organisationId}/fiscalYears/new`}
                 sx={{ mt: 2 }}
               >
                 Skapa nytt räkenskapsår
