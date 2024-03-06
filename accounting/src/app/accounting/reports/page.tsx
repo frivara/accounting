@@ -4,6 +4,14 @@ import { useRouter } from "next/navigation";
 import { db } from "../../db/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { MyContext } from "@/app/helpers/context";
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  pdf,
+} from "@react-pdf/renderer";
 
 import {
   TextField,
@@ -14,12 +22,147 @@ import {
   Typography,
 } from "@mui/material";
 
+const styles = StyleSheet.create({
+  page: {
+    flexDirection: "column",
+    backgroundColor: "#fff",
+    padding: 24,
+    fontFamily: "Helvetica",
+  },
+  header: {
+    marginBottom: 20,
+    paddingBottom: 10,
+    borderBottom: "1 solid #ccc",
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  section: {
+    marginTop: 10,
+    padding: 10,
+    flexGrow: 1,
+  },
+
+  table: {
+    display: "flex",
+    width: "100%",
+    borderStyle: "solid",
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+  },
+  tableRow: {
+    flexDirection: "row",
+    backgroundColor: "#f6f6f6",
+  },
+  tableColHeader: {
+    width: "20%",
+    borderStyle: "solid",
+    borderColor: "#ccc",
+    borderBottomColor: "#000",
+    borderWidth: 1,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#e4e4e4",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  tableCol: {
+    width: "20%",
+    borderStyle: "solid",
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tableCell: {
+    margin: "auto",
+    marginTop: 5,
+    fontSize: 10,
+  },
+  closingBalance: {
+    marginTop: 10,
+    padding: 5,
+    fontSize: 12,
+    fontWeight: "bold",
+    textAlign: "right",
+  },
+  footer: {
+    marginTop: "auto",
+    paddingTop: 10,
+    borderTopWidth: 2,
+    borderTopStyle: "solid",
+    borderTopColor: "#ccc",
+    textAlign: "center",
+    fontSize: 10,
+  },
+  organizationInfo: {
+    fontSize: 12,
+    fontWeight: "bold",
+    marginBottom: 3,
+  },
+  fiscalYearInfo: {
+    fontSize: 11,
+    marginBottom: 10,
+  },
+  accountContainer: {
+    marginBottom: 15,
+  },
+  accountHeader: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginBottom: 3,
+  },
+  transactionRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    alignItems: "center",
+    minHeight: 25,
+    fontSize: 10,
+  },
+  transactionCell: {
+    borderRightWidth: 1,
+    borderRightColor: "#ccc",
+    padding: 5,
+    fontSize: 10,
+  },
+  balanceRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    paddingVertical: 3,
+    paddingHorizontal: 5,
+  },
+  balanceLabel: {
+    fontSize: 11,
+    fontWeight: "bold",
+  },
+  balanceValue: {
+    fontSize: 11,
+    width: 100,
+    textAlign: "right",
+  },
+});
+
 const ReportsPage: React.FC = () => {
   const { globalState }: any = useContext(MyContext); // Accessing context
   const [selectedOrganization, setSelectedOrganization] = useState<string>("");
   const [fiscalYears, setFiscalYears] = useState<any[]>([]);
   const [selectedFiscalYear, setSelectedFiscalYear] = useState<string>("");
   const [transactions, setTransactions] = useState<any[]>([]);
+
   const [huvudbokData, setHuvudbokData] = useState<
     Record<
       string,
@@ -39,6 +182,10 @@ const ReportsPage: React.FC = () => {
       }
     >
   >({});
+
+  const selectedOrgDetails = globalState.organizations?.find(
+    (org: any) => org.id === selectedOrganization
+  );
 
   const [accountBalances, setAccountBalances] = useState<
     Record<string, number>
@@ -121,13 +268,11 @@ const ReportsPage: React.FC = () => {
       }
     }
 
-    // After all transactions have been processed, you should calculate the final closing balances
     for (const accountId in newHuvudbokData) {
       newHuvudbokData[accountId].closingBalance +=
         newHuvudbokData[accountId].openingBalance;
     }
 
-    // Update states
     setTransactions(fetchedTransactions);
     setAccountBalances(newAccountBalances);
     setHuvudbokData(newHuvudbokData);
@@ -155,6 +300,128 @@ const ReportsPage: React.FC = () => {
     event: React.ChangeEvent<{ value: unknown }>
   ) => {
     setSelectedFiscalYear(event.target.value as string);
+  };
+
+  const HuvudbokPDF = ({ huvudbokData, orgDetails }: any) => (
+    <Document>
+      <Page style={styles.page}>
+        <Text style={styles.title}>Huvudbok</Text>
+
+        {/* Organization Details */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginBottom: 10,
+          }}
+        >
+          <View style={{ marginBottom: 10 }}>
+            <Text style={styles.organizationInfo}>{orgDetails?.name}</Text>
+            <Text style={styles.organizationInfo}>
+              Org. Number: {orgDetails?.number}
+            </Text>
+          </View>
+          {/* Fiscal Year Info */}
+          <Text style={styles.fiscalYearInfo}>
+            Fiscal Year: {selectedFiscalYear}
+          </Text>
+        </View>
+
+        {/* Accounts and Transactions */}
+        {Object.entries(huvudbokData).map(([accountId, accountData]: any) => (
+          <View key={accountId} style={styles.accountContainer}>
+            <Text style={styles.accountHeader}>
+              {accountData.accountDetails.accountId}
+            </Text>
+            {/* Transactions Table */}
+            <View style={styles.table}>
+              {/* Table Header */}
+              <View style={styles.tableRow}>
+                <Text style={[styles.tableColHeader, { width: "25%" }]}>
+                  Datum
+                </Text>
+                <Text style={[styles.tableColHeader, { flex: 3 }]}>
+                  Beskrivning
+                </Text>
+                <Text style={[styles.tableColHeader, { width: "15%" }]}>
+                  Debet
+                </Text>
+                <Text style={[styles.tableColHeader, { width: "15%" }]}>
+                  Kredit
+                </Text>
+                <Text style={[styles.tableColHeader, { width: "20%" }]}>
+                  Saldo
+                </Text>
+              </View>
+              {/* Transaction Rows */}
+              {accountData.transactions.map((transaction: any, index: any) => (
+                <View key={index} style={styles.transactionRow}>
+                  <Text style={[styles.transactionCell, { width: "25%" }]}>
+                    {transaction.date}
+                  </Text>
+                  <Text style={[styles.transactionCell, { flex: 3 }]}>
+                    {transaction.description}
+                  </Text>
+                  <Text style={[styles.transactionCell, { width: "15%" }]}>
+                    {transaction.debit.toFixed(2)}
+                  </Text>
+                  <Text style={[styles.transactionCell, { width: "15%" }]}>
+                    {transaction.credit.toFixed(2)}
+                  </Text>
+                  <Text style={[styles.transactionCell, { width: "20%" }]}>
+                    {/* Calculate the balance up to this transaction */}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            php
+            {/* Closing Balance */}
+            <View style={styles.balanceRow}>
+              <Text style={styles.balanceLabel}>Closing Balance:</Text>
+              <Text style={styles.balanceValue}>
+                {accountData.closingBalance.toFixed(2)}
+              </Text>
+            </View>
+          </View>
+        ))}
+
+        {/* Footer with additional information */}
+        <View style={styles.footer}>{/* Footer Content */}</View>
+      </Page>
+    </Document>
+  );
+
+  const generateHuvudbokPDF = async (
+    huvudbokData: Record<
+      string,
+      {
+        accountDetails: { name: string; code: string };
+        transactions: {
+          date: string;
+          description: string;
+          debit: number;
+          credit: number;
+        }[];
+        openingBalance: number;
+        closingBalance: number;
+      }
+    >
+  ) => {
+    try {
+      const doc = (
+        <HuvudbokPDF
+          huvudbokData={huvudbokData}
+          orgDetails={selectedOrgDetails}
+        />
+      );
+      const asPdf = pdf();
+      asPdf.updateContainer(doc);
+      const blob = await asPdf.toBlob();
+      const pdfUrl = URL.createObjectURL(blob);
+      window.open(pdfUrl, "_blank");
+    } catch (error) {
+      console.error("Failed to create the Huvudbok PDF", error);
+    }
   };
 
   return (
@@ -206,6 +473,9 @@ const ReportsPage: React.FC = () => {
           </Select>
         </Grid>
       )}
+      <Button onClick={() => generateHuvudbokPDF(huvudbokData)}>
+        Generate Huvudbok PDF
+      </Button>
     </Grid>
   );
 };
