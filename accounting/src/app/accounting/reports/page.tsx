@@ -342,25 +342,56 @@ const ReportsPage: React.FC = () => {
             <Text style={styles.organizationInfo}>
               Org. Number: {orgDetails?.number}
             </Text>
-            {fiscalYearPeriod.start && fiscalYearPeriod.end && (
-              <Text style={styles.fiscalYearContainer}>
-                Period: {format(fiscalYearPeriod.start.toDate(), "yyyy-MM-dd")}{" "}
-                -{format(fiscalYearPeriod.end.toDate(), "yyyy-MM-dd")}
-              </Text>
-            )}
+            <Text style={styles.fiscalYearContainer}>
+              Period:{" "}
+              {fiscalYearPeriod.start &&
+                format(fiscalYearPeriod.start.toDate(), "yyyy-MM-dd")}{" "}
+              -
+              {fiscalYearPeriod.end &&
+                format(fiscalYearPeriod.end.toDate(), "yyyy-MM-dd")}
+            </Text>
           </View>
         </View>
 
         {Object.entries(huvudbokData).map(([accountId, accountData]: any) => {
           let runningBalance = accountData.openingBalance;
 
+          // Sort transactions by date
+          const sortedTransactions = accountData.transactions.sort(
+            (a: any, b: any) =>
+              new Date(a.date).getTime() - new Date(b.date).getTime()
+          );
+
           return (
             <View key={accountId} style={styles.accountContainer}>
               <Text style={styles.accountHeader}>
                 {accountData.accountDetails.name}
               </Text>
+
+              {/* Ingående balans row */}
+              <View style={styles.balanceRow}>
+                <Text
+                  style={[
+                    styles.transactionCell,
+                    { flex: 3, textAlign: "left", fontSize: 14 },
+                  ]}
+                >
+                  Ingående balans
+                </Text>
+                <Text
+                  style={[
+                    styles.transactionCell,
+                    { width: "20%", textAlign: "right" },
+                  ]}
+                >
+                  {accountData.openingBalance.toFixed(2)}
+                </Text>
+              </View>
+
+              {/* Transactions Table */}
               <View style={styles.table}>
                 <View style={styles.tableRow}>
+                  {/* Table headers */}
                   <Text style={[styles.tableColHeader, { width: "25%" }]}>
                     Datum
                   </Text>
@@ -377,51 +408,56 @@ const ReportsPage: React.FC = () => {
                     Saldo
                   </Text>
                 </View>
-                {accountData.transactions.map(
-                  (transaction: any, index: any) => {
-                    runningBalance += transaction.debit - transaction.credit;
-                    return (
-                      <View key={index} style={styles.transactionRow}>
-                        <Text
-                          style={[styles.transactionCell, { width: "25%" }]}
-                        >
-                          {transaction.date}
-                        </Text>
-                        <Text style={[styles.transactionCell, { flex: 3 }]}>
-                          {transaction.description}
-                        </Text>
-                        <Text
-                          style={[styles.transactionCell, { width: "15%" }]}
-                        >
-                          {transaction.debit.toFixed(2)}
-                        </Text>
-                        <Text
-                          style={[styles.transactionCell, { width: "15%" }]}
-                        >
-                          {transaction.credit.toFixed(2)}
-                        </Text>
-                        <Text
-                          style={[styles.transactionCell, { width: "20%" }]}
-                        >
-                          {runningBalance.toFixed(2)}
-                        </Text>
-                      </View>
-                    );
-                  }
-                )}
-                <View style={styles.balanceRow}>
-                  <Text style={styles.balanceLabel}>Closing Balance:</Text>
-                  <Text style={styles.balanceValue}>
-                    {runningBalance.toFixed(2)}
-                  </Text>
-                </View>
+                {/* Transactions rows */}
+                {sortedTransactions.map((transaction: any, index: any) => {
+                  runningBalance += transaction.debit - transaction.credit;
+                  return (
+                    <View key={index} style={styles.transactionRow}>
+                      <Text style={[styles.transactionCell, { width: "25%" }]}>
+                        {format(new Date(transaction.date), "yyyy-MM-dd")}
+                      </Text>
+                      <Text style={[styles.transactionCell, { flex: 3 }]}>
+                        {transaction.description}
+                      </Text>
+                      <Text style={[styles.transactionCell, { width: "15%" }]}>
+                        {transaction.debit.toFixed(2)}
+                      </Text>
+                      <Text style={[styles.transactionCell, { width: "15%" }]}>
+                        {transaction.credit.toFixed(2)}
+                      </Text>
+                      <Text style={[styles.transactionCell, { width: "20%" }]}>
+                        {runningBalance.toFixed(2)}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+
+              {/* Utgående balans row */}
+              <View style={styles.balanceRow}>
+                <Text
+                  style={[
+                    styles.transactionCell,
+                    { flex: 3, textAlign: "left", fontSize: 14 },
+                  ]}
+                >
+                  Utgående balans
+                </Text>
+                <Text
+                  style={[
+                    styles.transactionCell,
+                    { width: "20%", textAlign: "right" },
+                  ]}
+                >
+                  {runningBalance.toFixed(2)}
+                </Text>
               </View>
             </View>
           );
         })}
 
         <View style={styles.footer}>
-          {/* Unsure if we need a footer but keeping this temporarily */}
+          <Text>Footer Content</Text>
         </View>
       </Page>
     </Document>
