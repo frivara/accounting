@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, useContext } from "react";
-import { useRouter } from "next/navigation";
 import { db } from "../../db/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { MyContext } from "@/app/helpers/context";
@@ -12,6 +11,8 @@ import {
   StyleSheet,
   pdf,
 } from "@react-pdf/renderer";
+
+import { format } from "date-fns";
 
 import {
   TextField,
@@ -116,6 +117,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginBottom: 10,
   },
+  fiscalYearContainer: {
+    marginTop: 10,
+    fontSize: 11,
+    marginBottom: 10,
+    textAlign: "right",
+  },
   accountContainer: {
     marginBottom: 15,
   },
@@ -161,6 +168,11 @@ const ReportsPage: React.FC = () => {
   const [selectedOrganization, setSelectedOrganization] = useState<string>("");
   const [fiscalYears, setFiscalYears] = useState<any[]>([]);
   const [selectedFiscalYear, setSelectedFiscalYear] = useState<string>("");
+  const [selectedFiscalYearPeriod, setSelectedFiscalYearPeriod] = useState({
+    start: null,
+    end: null,
+  });
+
   const [transactions, setTransactions] = useState<any[]>([]);
 
   const [huvudbokData, setHuvudbokData] = useState<
@@ -219,6 +231,8 @@ const ReportsPage: React.FC = () => {
       return {
         id: doc.id,
         year,
+        start: data.fiscalYearSpan?.start,
+        end: data.fiscalYearSpan?.end,
         ...data,
       };
     });
@@ -245,7 +259,9 @@ const ReportsPage: React.FC = () => {
 
         if (!newHuvudbokData[accountId]) {
           newHuvudbokData[accountId] = {
-            accountDetails: {},
+            accountDetails: {
+              name: accountId,
+            },
             transactions: [],
             openingBalance: 0,
             closingBalance: 0,
@@ -299,15 +315,21 @@ const ReportsPage: React.FC = () => {
   const handleFiscalYearChange: any = (
     event: React.ChangeEvent<{ value: unknown }>
   ) => {
-    setSelectedFiscalYear(event.target.value as string);
+    const fiscalYearId = event.target.value as string;
+    setSelectedFiscalYear(fiscalYearId);
+    const selectedYearData = fiscalYears.find((fy) => fy.id === fiscalYearId);
+    if (selectedYearData) {
+      setSelectedFiscalYearPeriod({
+        start: selectedYearData.start,
+        end: selectedYearData.end,
+      });
+    }
   };
 
-  const HuvudbokPDF = ({ huvudbokData, orgDetails }: any) => (
+  const HuvudbokPDF = ({ huvudbokData, orgDetails, fiscalYearPeriod }: any) => (
     <Document>
       <Page style={styles.page}>
         <Text style={styles.title}>Huvudbok</Text>
-
-        {/* Organization Details */}
         <View
           style={{
             flexDirection: "row",
@@ -320,73 +342,87 @@ const ReportsPage: React.FC = () => {
             <Text style={styles.organizationInfo}>
               Org. Number: {orgDetails?.number}
             </Text>
+            {fiscalYearPeriod.start && fiscalYearPeriod.end && (
+              <Text style={styles.fiscalYearContainer}>
+                Period: {format(fiscalYearPeriod.start.toDate(), "yyyy-MM-dd")}{" "}
+                -{format(fiscalYearPeriod.end.toDate(), "yyyy-MM-dd")}
+              </Text>
+            )}
           </View>
-          {/* Fiscal Year Info */}
-          <Text style={styles.fiscalYearInfo}>
-            Fiscal Year: {selectedFiscalYear}
-          </Text>
         </View>
 
-        {/* Accounts and Transactions */}
-        {Object.entries(huvudbokData).map(([accountId, accountData]: any) => (
-          <View key={accountId} style={styles.accountContainer}>
-            <Text style={styles.accountHeader}>
-              {accountData.accountDetails.accountId}
-            </Text>
-            {/* Transactions Table */}
-            <View style={styles.table}>
-              {/* Table Header */}
-              <View style={styles.tableRow}>
-                <Text style={[styles.tableColHeader, { width: "25%" }]}>
-                  Datum
-                </Text>
-                <Text style={[styles.tableColHeader, { flex: 3 }]}>
-                  Beskrivning
-                </Text>
-                <Text style={[styles.tableColHeader, { width: "15%" }]}>
-                  Debet
-                </Text>
-                <Text style={[styles.tableColHeader, { width: "15%" }]}>
-                  Kredit
-                </Text>
-                <Text style={[styles.tableColHeader, { width: "20%" }]}>
-                  Saldo
-                </Text>
-              </View>
-              {/* Transaction Rows */}
-              {accountData.transactions.map((transaction: any, index: any) => (
-                <View key={index} style={styles.transactionRow}>
-                  <Text style={[styles.transactionCell, { width: "25%" }]}>
-                    {transaction.date}
+        {Object.entries(huvudbokData).map(([accountId, accountData]: any) => {
+          let runningBalance = accountData.openingBalance;
+
+          return (
+            <View key={accountId} style={styles.accountContainer}>
+              <Text style={styles.accountHeader}>
+                {accountData.accountDetails.name}
+              </Text>
+              <View style={styles.table}>
+                <View style={styles.tableRow}>
+                  <Text style={[styles.tableColHeader, { width: "25%" }]}>
+                    Datum
                   </Text>
-                  <Text style={[styles.transactionCell, { flex: 3 }]}>
-                    {transaction.description}
+                  <Text style={[styles.tableColHeader, { flex: 3 }]}>
+                    Beskrivning
                   </Text>
-                  <Text style={[styles.transactionCell, { width: "15%" }]}>
-                    {transaction.debit.toFixed(2)}
+                  <Text style={[styles.tableColHeader, { width: "15%" }]}>
+                    Debet
                   </Text>
-                  <Text style={[styles.transactionCell, { width: "15%" }]}>
-                    {transaction.credit.toFixed(2)}
+                  <Text style={[styles.tableColHeader, { width: "15%" }]}>
+                    Kredit
                   </Text>
-                  <Text style={[styles.transactionCell, { width: "20%" }]}>
-                    {/* Calculate the balance up to this transaction */}
+                  <Text style={[styles.tableColHeader, { width: "20%" }]}>
+                    Saldo
                   </Text>
                 </View>
-              ))}
+                {accountData.transactions.map(
+                  (transaction: any, index: any) => {
+                    runningBalance += transaction.debit - transaction.credit;
+                    return (
+                      <View key={index} style={styles.transactionRow}>
+                        <Text
+                          style={[styles.transactionCell, { width: "25%" }]}
+                        >
+                          {transaction.date}
+                        </Text>
+                        <Text style={[styles.transactionCell, { flex: 3 }]}>
+                          {transaction.description}
+                        </Text>
+                        <Text
+                          style={[styles.transactionCell, { width: "15%" }]}
+                        >
+                          {transaction.debit.toFixed(2)}
+                        </Text>
+                        <Text
+                          style={[styles.transactionCell, { width: "15%" }]}
+                        >
+                          {transaction.credit.toFixed(2)}
+                        </Text>
+                        <Text
+                          style={[styles.transactionCell, { width: "20%" }]}
+                        >
+                          {runningBalance.toFixed(2)}
+                        </Text>
+                      </View>
+                    );
+                  }
+                )}
+                <View style={styles.balanceRow}>
+                  <Text style={styles.balanceLabel}>Closing Balance:</Text>
+                  <Text style={styles.balanceValue}>
+                    {runningBalance.toFixed(2)}
+                  </Text>
+                </View>
+              </View>
             </View>
-            php
-            {/* Closing Balance */}
-            <View style={styles.balanceRow}>
-              <Text style={styles.balanceLabel}>Closing Balance:</Text>
-              <Text style={styles.balanceValue}>
-                {accountData.closingBalance.toFixed(2)}
-              </Text>
-            </View>
-          </View>
-        ))}
+          );
+        })}
 
-        {/* Footer with additional information */}
-        <View style={styles.footer}>{/* Footer Content */}</View>
+        <View style={styles.footer}>
+          {/* Unsure if we need a footer but keeping this temporarily */}
+        </View>
       </Page>
     </Document>
   );
@@ -412,6 +448,7 @@ const ReportsPage: React.FC = () => {
         <HuvudbokPDF
           huvudbokData={huvudbokData}
           orgDetails={selectedOrgDetails}
+          fiscalYearPeriod={selectedFiscalYearPeriod}
         />
       );
       const asPdf = pdf();
