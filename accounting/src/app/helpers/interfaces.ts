@@ -54,3 +54,27 @@ export interface InvoiceData {
   paymentTerms: string;
   items: Item[];
 }
+
+export interface AccountSummary {
+  totalDebit: number;
+
+  totalCredit: number;
+
+  totalChange: number;
+
+  openingBalance: number;
+
+  closingBalance: number;
+}
+
+export interface BalansRapportData {
+  assets: Record<string, AccountSummary>;
+
+  liabilitiesAndEquity: Record<string, AccountSummary>;
+
+  totalAssets: number;
+
+  totalLiabilitiesAndEquity: number;
+
+  isBalanced: boolean;
+}

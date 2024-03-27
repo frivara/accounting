@@ -11,9 +11,7 @@ import {
   StyleSheet,
   pdf,
 } from "@react-pdf/renderer";
-
 import { format } from "date-fns";
-
 import {
   TextField,
   Button,
@@ -22,6 +20,7 @@ import {
   Grid,
   Typography,
 } from "@mui/material";
+import { AccountSummary, BalansRapportData } from "@/app/helpers/interfaces";
 
 const styles = StyleSheet.create({
   page: {
@@ -62,6 +61,11 @@ const styles = StyleSheet.create({
   tableRow: {
     flexDirection: "row",
     backgroundColor: "#f6f6f6",
+  },
+  tableRowHeader: {
+    flexDirection: "row",
+    backgroundColor: "#000",
+    color: "#fff",
   },
   tableColHeader: {
     width: "20%",
@@ -161,6 +165,134 @@ const styles = StyleSheet.create({
     width: 100,
     textAlign: "right",
   },
+  isBalanced: {
+    marginTop: 10,
+  },
+
+  balansPage: {
+    flexDirection: "column",
+    backgroundColor: "#fff",
+    padding: 24,
+    fontFamily: "Helvetica",
+  },
+  balansHeader: {
+    marginBottom: 20,
+    paddingBottom: 10,
+    borderBottom: "2 solid #000",
+  },
+  balansTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  balansOrganizationInfo: {
+    fontSize: 12,
+    fontWeight: "normal",
+    marginBottom: 3,
+  },
+  balansFiscalYearInfo: {
+    fontSize: 11,
+    marginBottom: 10,
+  },
+  balansSection: {
+    marginTop: 10,
+    padding: 10,
+    flexGrow: 1,
+  },
+  balansSubtitle: {
+    fontSize: 16,
+    marginBottom: 8,
+    fontWeight: "bold",
+  },
+  balansTable: {
+    width: "100%",
+    borderStyle: "solid",
+    borderColor: "#000",
+    borderWidth: 1,
+    marginTop: 24,
+  },
+  balansTableRow: {
+    flexDirection: "row",
+    borderBottomColor: "#000",
+    borderBottomWidth: 1,
+  },
+  balansTableCol: {
+    // Style for regular columns
+    flex: 1,
+    padding: 5,
+    fontSize: 10,
+    borderRightWidth: 1,
+    borderColor: "#000",
+  },
+  balansTableColRight: {
+    // Style for right-aligned columns
+    flex: 1,
+    padding: 5,
+    fontSize: 10,
+    textAlign: "right",
+    borderRightWidth: 1,
+    borderColor: "#000",
+  },
+  balansTableRowHeader: {
+    backgroundColor: "#000",
+    color: "#fff",
+    borderBottomColor: "#fff",
+  },
+  balansTableColHeader: {
+    // Style for header columns
+    flex: 1,
+    backgroundColor: "#000",
+    color: "#fff",
+    padding: 5,
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+
+  balansFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderTopWidth: 2,
+    borderTopColor: "#000",
+    marginTop: 8,
+    paddingTop: 4,
+    paddingBottom: 4,
+  },
+  totalsLabel: {
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  totalsValue: {
+    fontSize: 12,
+    fontWeight: "bold",
+    textAlign: "right",
+  },
+  balansIsBalanced: {
+    textAlign: "center",
+    marginTop: 10,
+    fontSize: 12,
+  },
+  sumRow: {
+    // Style for the summation row
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderColor: "#000",
+    paddingTop: 5,
+    paddingBottom: 5,
+  },
+  sumLabel: {
+    flex: 1,
+    textAlign: "right",
+    paddingRight: 5,
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  sumValue: {
+    width: 100,
+    textAlign: "right",
+    fontSize: 10,
+    fontWeight: "bold",
+    paddingRight: 5,
+  },
 });
 
 const ReportsPage: React.FC = () => {
@@ -173,6 +305,18 @@ const ReportsPage: React.FC = () => {
   const [selectedFiscalYearPeriod, setSelectedFiscalYearPeriod] = useState({
     start: null,
     end: null,
+  });
+
+  const [balansrapportData, setBalansrapportData] = useState<any>({
+    assets: "",
+
+    liabilitiesAndEquity: "",
+
+    totalAssets: 0,
+
+    totalLiabilitiesAndEquity: 0,
+
+    isBalanced: false,
   });
 
   const [huvudbokData, setHuvudbokData] = useState<
@@ -336,24 +480,20 @@ const ReportsPage: React.FC = () => {
 
         if (!accountSummaries[accountId]) {
           accountSummaries[accountId] = {
-            totalDebit: 0,
-            totalCredit: 0,
-            totalChange: 0,
-            openingBalance: 0,
+            openingBalance: 0, // You'll need to set the correct opening balance here
+            periodChange: 0,
             closingBalance: 0,
           };
         }
 
-        accountSummaries[accountId].totalDebit += debit;
-        accountSummaries[accountId].totalCredit += credit;
+        accountSummaries[accountId].periodChange += debit - credit;
       });
     });
 
     for (const accountId in accountSummaries) {
       const account = accountSummaries[accountId];
-      account.totalChange = account.totalDebit - account.totalCredit;
-
-      account.closingBalance = account.openingBalance + account.totalChange;
+      // Assume `openingBalance` is correctly populated beforehand
+      account.closingBalance = account.openingBalance + account.periodChange;
     }
 
     const filteredAccountSummaries = Object.fromEntries(
@@ -362,7 +502,37 @@ const ReportsPage: React.FC = () => {
       )
     );
 
-    console.log("Account Summaries:", filteredAccountSummaries);
+    const assets: any = {},
+      liabilitiesAndEquity: any = {};
+    Object.entries(filteredAccountSummaries).forEach(
+      ([accountId, summary]: any) => {
+        if (accountId.startsWith("1")) {
+          assets[accountId] = summary;
+        } else if (accountId.startsWith("2")) {
+          liabilitiesAndEquity[accountId] = summary;
+        }
+      }
+    );
+
+    const totalAssets: any = Object.values(assets).reduce(
+      (acc: any, { closingBalance }: any) => acc + closingBalance,
+      0
+    );
+    const totalLiabilitiesAndEquity: any = Object.values(
+      liabilitiesAndEquity
+    ).reduce((acc: any, { closingBalance }: any) => acc + closingBalance, 0);
+
+    // Checking if the report is balanced
+    const isBalanced = totalAssets === totalLiabilitiesAndEquity;
+
+    // Setting the state with the organized data
+    setBalansrapportData({
+      assets,
+      liabilitiesAndEquity,
+      totalAssets,
+      totalLiabilitiesAndEquity,
+      isBalanced,
+    });
   };
 
   const HuvudbokPDF = ({ huvudbokData, orgDetails, fiscalYearPeriod }: any) => (
@@ -536,42 +706,138 @@ const ReportsPage: React.FC = () => {
   };
 
   const BalansrapportPDF = ({
-    balanceData,
+    balansData,
     orgDetails,
     fiscalYearPeriod,
-  }: any) => (
-    <Document>
-      <Page style={styles.page}>
-        <Text style={styles.title}>Balansrapport</Text>
-        {/* Organization and Fiscal Year Info */}
-        {/* ... */}
+  }: any) => {
+    const renderTableHeader = () => (
+      <View style={styles.tableRow}>
+        <Text style={[styles.balansTableColHeader, { flex: 2 }]}>Konto</Text>
+        <Text style={styles.balansTableColHeader}>Ingående balans</Text>
+        <Text style={styles.balansTableColHeader}>Period</Text>
+        <Text style={styles.balansTableColHeader}>Utgående balans</Text>
+      </View>
+    );
 
-        {/* Assets Section */}
-        <View style={styles.section}>
-          <Text style={styles.subtitle}>Tillgångar</Text>
-          {/* Iterate over Assets and create rows */}
+    const renderTableRow = (account: any, index: any) => (
+      <View style={styles.tableRow} key={index}>
+        <Text style={[styles.balansTableCol, { flex: 2 }]}>{account.name}</Text>
+        <Text style={styles.balansTableColRight}>
+          {account.openingBalance.toFixed(2)}
+        </Text>
+        <Text style={styles.balansTableColRight}>
+          {account.periodChange.toFixed(2)}
+        </Text>
+        <Text style={styles.balansTableColRight}>
+          {account.closingBalance.toFixed(2)}
+        </Text>
+      </View>
+    );
+
+    const calculateSum = (accounts: any) => {
+      return accounts.reduce((total: any, account: any) => {
+        return total + account.closingBalance;
+      }, 0);
+    };
+
+    const renderSumRow = (accounts: any) => {
+      const sumClosingBalance = accounts.reduce(
+        (sum: any, account: any) => sum + account.closingBalance,
+        0
+      );
+      return (
+        <View style={styles.sumRow}>
+          <Text style={[styles.sumLabel, { flex: 2 }]}>Summa</Text>
+          <Text style={styles.sumValue}></Text>{" "}
+          <Text style={styles.sumValue}>{sumClosingBalance.toFixed(2)}</Text>
         </View>
+      );
+    };
 
-        {/* Equity and Liabilities Section */}
-        <View style={styles.section}>
-          <Text style={styles.subtitle}>Eget kapital och skulder</Text>
-          {/* Iterate over Equity and Liabilities and create rows */}
+    const renderTable = (sectionTitle: any, accounts: any) => (
+      <View style={styles.balansSection}>
+        <Text style={styles.balansSubtitle}>{sectionTitle}</Text>
+        <View style={styles.balansTable}>
+          {renderTableHeader()}
+          {accounts.map(renderTableRow)}
+          {renderSumRow(accounts)}
         </View>
+      </View>
+    );
+    // Helper function to render each account row
+    const renderAccountRow = (account: any, isHeader = false) => (
+      <View style={isHeader ? styles.tableRowHeader : styles.tableRow}>
+        <Text style={[styles.tableCol, { width: "50%" }]}>{account.name}</Text>
+        <Text style={[styles.tableCol, { width: "25%", textAlign: "right" }]}>
+          {account.openingBalance.toFixed(2)}
+        </Text>
+        <Text style={[styles.tableCol, { width: "25%", textAlign: "right" }]}>
+          {account.closingBalance.toFixed(2)}
+        </Text>
+      </View>
+    );
 
-        {/* Summation of Assets, Equity and Liabilities */}
-        {/* ... */}
+    return (
+      <Document>
+        <Page style={styles.page}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Balansrapport</Text>
+            <Text style={styles.organizationInfo}>{orgDetails.name}</Text>
+            <Text style={styles.organizationInfo}>
+              {orgDetails?.number}
+            </Text>{" "}
+            <Text style={styles.fiscalYearInfo}>
+              Räkenskapsår:{" "}
+              {format(fiscalYearPeriod.start.toDate(), "yyyy-MM-dd")} till
+              {format(fiscalYearPeriod.end.toDate(), "yyyy-MM-dd")}
+            </Text>
+            <Text style={styles.fiscalYearInfo}>
+              Period: {format(fiscalYearPeriod.start.toDate(), "yyyy-MM-dd")}{" "}
+              till
+              {format(fiscalYearPeriod.end.toDate(), "yyyy-MM-dd")}
+            </Text>
+          </View>
 
-        {/* Footer */}
-        <Text style={styles.footer}>Generated by Your App Name</Text>
-      </Page>
-    </Document>
-  );
+          {renderTable(
+            "Tillgångar",
+            Object.entries(balansData.assets).map(([id, account]: any) => ({
+              ...account,
+              name: account.name || id,
+              periodChange: account.totalChange,
+            }))
+          )}
 
-  const generateBalansrapportPDF = async (balanceData: any) => {
+          {renderTable(
+            "Eget kapital och skulder",
+            Object.entries(balansData.liabilitiesAndEquity).map(
+              ([id, account]: any) => ({
+                ...account,
+                name: account.name || id, // If account.name is not set, use the account ID
+                periodChange: account.totalChange,
+              })
+            )
+          )}
+
+          <View style={styles.balansFooter}>
+            <Text>Summa tillgångar: {balansData.totalAssets.toFixed(2)}</Text>
+            <Text>
+              Summa eget kapital och skulder:{" "}
+              {balansData.totalLiabilitiesAndEquity.toFixed(2)}
+            </Text>
+            <Text style={styles.balansIsBalanced}>
+              {balansData.isBalanced ? "Balanserad" : "Obalanserad"}
+            </Text>
+          </View>
+        </Page>
+      </Document>
+    );
+  };
+
+  const generateBalansrapportPDF = async () => {
     try {
       const doc = (
         <BalansrapportPDF
-          balanceData={balanceData}
+          balansData={balansrapportData}
           orgDetails={selectedOrgDetails}
           fiscalYearPeriod={selectedFiscalYearPeriod}
         />
@@ -582,7 +848,7 @@ const ReportsPage: React.FC = () => {
       const pdfUrl = URL.createObjectURL(blob);
       window.open(pdfUrl, "_blank");
     } catch (error) {
-      console.error("Failed to create the Balansrapport PDF", error);
+      console.error("Failed to create the Huvudbok PDF", error);
     }
   };
 
@@ -637,6 +903,9 @@ const ReportsPage: React.FC = () => {
       )}
       <Button onClick={() => generateHuvudbokPDF(huvudbokData)}>
         Generate Huvudbok PDF
+      </Button>
+      <Button onClick={() => generateBalansrapportPDF()}>
+        Generate Balansrapport PDF
       </Button>
     </Grid>
   );
