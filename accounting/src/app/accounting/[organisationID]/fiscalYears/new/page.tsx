@@ -125,16 +125,16 @@ const NewFiscalYear: React.FC = () => {
 
   const handleCreateFiscalYear = async () => {
     if (fiscalYearSpan.start && fiscalYearSpan.end && organisationId) {
-      setLoading(true);
       try {
-        // Fetch the final balances from the last closed fiscal year
         const fetchedBalances = await fetchLastClosedYearBalances();
 
-        // Combine fetched balances with manually added balances
-        const combinedBalances = [...fetchedBalances, ...startBalances];
+        if (!Array.isArray(fetchedBalances)) {
+          console.error("Expected fetchedBalances to be an array, received:", fetchedBalances);
+          return;
+        }
 
-        // Log combined balances to see if they're correct
-        console.log("Combined balances: ", combinedBalances);
+        const combinedBalances = [...fetchedBalances, ...startBalances];
+        console.log("Combined balances for new fiscal year:", combinedBalances);
 
         // Prepare the new fiscal year data
         const newFiscalYearData = {
@@ -154,10 +154,10 @@ const NewFiscalYear: React.FC = () => {
         // Navigate to the next page or show success message
         router.push(`/accounting/${organisationId}/`);
       } catch (error) {
-        setError("Error creating fiscal year: " + (error as Error).message);
-      } finally {
-        setLoading(false);
+        // Handle errors, such as showing a user-friendly message or retrying the operation.
+        console.error("Failed to create fiscal year:", error);
       }
+
     }
   };
 
@@ -166,37 +166,29 @@ const NewFiscalYear: React.FC = () => {
       // Query to get the last closed fiscal year
       const fiscalYearsQuery = query(
         collection(db, "fiscalYears"),
-        where("accountId", "==", organisationId), // Make sure to filter by accountId
+        where("accountId", "==", organisationId),
         where("isClosed", "==", true),
-        orderBy("fiscalYearSpan.end", "desc"), // Adjust to the correct field
+        orderBy("fiscalYearSpan.end", "desc"),
         limit(1)
       );
       const fiscalYearsSnapshot = await getDocs(fiscalYearsQuery);
 
       if (!fiscalYearsSnapshot.empty) {
+        // If a fiscal year is found, fetch the balances from its 'balances' subcollection.
         const lastFiscalYearDoc = fiscalYearsSnapshot.docs[0];
-
-        // Now we get the balances subcollection from the last fiscal year document
-        const balancesCollectionRef = collection(
-          lastFiscalYearDoc.ref,
-          "balances"
-        );
+        const balancesCollectionRef = collection(lastFiscalYearDoc.ref, "balances");
         const balancesSnapshot = await getDocs(balancesCollectionRef);
 
-        if (!balancesSnapshot.empty) {
-          return balancesSnapshot.docs.map((doc) => {
-            const data = doc.data();
-            return {
-              accountCode: doc.id, // Make sure this is correct
-              balance: data.balance, // Make sure data.balance is correct
-            };
-          });
-        } else {
-          console.log("No balances found in the subcollection");
-          return [];
-        }
+        // Create an array from the 'balances' subcollection documents.
+        const balances = balancesSnapshot.docs.map((doc) => ({
+          accountCode: doc.id, // Use the document ID as the accountCode.
+          balance: doc.data().balance // Use the 'balance' field from the document.
+        }));
+
+        console.log("Fetched balances:", balances);
+        return balances;
       } else {
-        console.log("No documents found with 'isClosed' set to true");
+        console.log("No closed fiscal years found for the provided accountId.");
         return [];
       }
     } catch (error) {
@@ -204,6 +196,7 @@ const NewFiscalYear: React.FC = () => {
       throw error;
     }
   }
+
 
   const refreshBalances = async () => {
     setLoading(true);

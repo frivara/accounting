@@ -146,13 +146,13 @@ const FiscalYearPage: React.FC = () => {
     const finalBalances: FinalBalances = {};
     balancesSnapshot.forEach((doc) => {
       const data = doc.data();
-      finalBalances[doc.id] = data.balance; // Assuming 'balance' is a number.
+      finalBalances[doc.id] = data.balance;
     });
     return finalBalances;
   }
 
   const closeFiscalYear = async () => {
-    // Confirm with the user
+
     if (!window.confirm("Are you sure you want to close this fiscal year?")) {
       return;
     }

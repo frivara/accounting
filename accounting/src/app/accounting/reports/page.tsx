@@ -272,26 +272,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   sumRow: {
-    // Style for the summation row
     flexDirection: "row",
-    borderTopWidth: 1,
-    borderColor: "#000",
+    borderTopWidth: 2,
+    borderTopColor: "#000", // Change this color to match your design
+    backgroundColor: "#e0e0e0", // Light grey background for sum row
     paddingTop: 5,
     paddingBottom: 5,
+    marginTop: 2, // Ensure there's a little space before the sum row
   },
   sumLabel: {
+    flex: 2,
+    textAlign: "left",
+    paddingLeft: 5,
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  sumValue: {
     flex: 1,
     textAlign: "right",
     paddingRight: 5,
     fontSize: 10,
     fontWeight: "bold",
-  },
-  sumValue: {
-    width: 100,
-    textAlign: "right",
-    fontSize: 10,
-    fontWeight: "bold",
-    paddingRight: 5,
   },
 });
 
@@ -476,64 +477,76 @@ const ReportsPage: React.FC = () => {
 
     transactions.forEach((transaction) => {
       transaction.entries.forEach((entry: any) => {
-        const { accountId, debit = 0, credit = 0 }: any = entry;
+        const { accountId, debit = 0, credit = 0 } = entry;
 
         if (!accountSummaries[accountId]) {
           accountSummaries[accountId] = {
-            openingBalance: 0, // You'll need to set the correct opening balance here
-            periodChange: 0,
+            openingBalance: 0,
             closingBalance: 0,
           };
         }
 
-        accountSummaries[accountId].periodChange += debit - credit;
+
+        accountSummaries[accountId].closingBalance += (debit - credit);
       });
     });
 
-    for (const accountId in accountSummaries) {
+
+    Object.keys(accountSummaries).forEach(accountId => {
       const account = accountSummaries[accountId];
-      // Assume `openingBalance` is correctly populated beforehand
-      account.closingBalance = account.openingBalance + account.periodChange;
-    }
+      account.periodChange = account.closingBalance - account.openingBalance;
+      console.log("Period change: " + account.periodChange)
+    });
 
-    const filteredAccountSummaries = Object.fromEntries(
-      Object.entries(accountSummaries).filter(
-        ([accountId]) => accountId.startsWith("1") || accountId.startsWith("2")
-      )
-    );
+    setBalansrapportData(structureDataForReport(accountSummaries));
+  };
 
-    const assets: any = {},
-      liabilitiesAndEquity: any = {};
-    Object.entries(filteredAccountSummaries).forEach(
-      ([accountId, summary]: any) => {
-        if (accountId.startsWith("1")) {
-          assets[accountId] = summary;
-        } else if (accountId.startsWith("2")) {
-          liabilitiesAndEquity[accountId] = summary;
-        }
+  const structureDataForReport = (accountSummaries: any) => {
+    const assets: any = {};
+    const liabilitiesAndEquity: any = {};
+
+
+    Object.entries(accountSummaries).forEach(([accountId, accountData]) => {
+      if (accountId.startsWith("1")) {
+        assets[accountId] = accountData;
+      } else if (accountId.startsWith("2")) {
+        liabilitiesAndEquity[accountId] = accountData;
       }
-    );
+    });
 
-    const totalAssets: any = Object.values(assets).reduce(
-      (acc: any, { closingBalance }: any) => acc + closingBalance,
-      0
-    );
-    const totalLiabilitiesAndEquity: any = Object.values(
-      liabilitiesAndEquity
-    ).reduce((acc: any, { closingBalance }: any) => acc + closingBalance, 0);
 
-    // Checking if the report is balanced
+    const totalAssets = calculateTotal(Object.values(assets));
+    const totalLiabilitiesAndEquity = calculateTotal(Object.values(liabilitiesAndEquity));
+
     const isBalanced = totalAssets === totalLiabilitiesAndEquity;
 
-    // Setting the state with the organized data
-    setBalansrapportData({
+    return {
       assets,
       liabilitiesAndEquity,
       totalAssets,
       totalLiabilitiesAndEquity,
       isBalanced,
-    });
+    };
   };
+
+  const calculateTotal = (accounts: any) => {
+    return accounts.reduce((total: any, account: any) => total + account.closingBalance, 0);
+  };
+
+  const calculateOpeningSum = (accounts: any) => {
+    return accounts.reduce((total: any, account: any) => {
+      return total + (account.openingBalance ?? 0);
+    }, 0);
+  };
+
+  const calculatePeriodSum = (accounts: any) => {
+    return accounts.reduce((total: any, account: any) => {
+      return total + (account.periodChange ?? 0);
+    }, 0);
+  };
+
+
+
 
   const HuvudbokPDF = ({ huvudbokData, orgDetails, fiscalYearPeriod }: any) => (
     <Document>
@@ -723,16 +736,17 @@ const ReportsPage: React.FC = () => {
       <View style={styles.tableRow} key={index}>
         <Text style={[styles.balansTableCol, { flex: 2 }]}>{account.name}</Text>
         <Text style={styles.balansTableColRight}>
-          {account.openingBalance.toFixed(2)}
+          {account.openingBalance?.toFixed(2)}
         </Text>
         <Text style={styles.balansTableColRight}>
-          {account.periodChange.toFixed(2)}
+          {(account.periodChange || account.periodChange === 0) ? account.periodChange.toFixed(2) : '0.00'}
         </Text>
         <Text style={styles.balansTableColRight}>
-          {account.closingBalance.toFixed(2)}
+          {account.closingBalance?.toFixed(2)}
         </Text>
       </View>
     );
+
 
     const calculateSum = (accounts: any) => {
       return accounts.reduce((total: any, account: any) => {
@@ -741,18 +755,28 @@ const ReportsPage: React.FC = () => {
     };
 
     const renderSumRow = (accounts: any) => {
-      const sumClosingBalance = accounts.reduce(
-        (sum: any, account: any) => sum + account.closingBalance,
-        0
-      );
+      const sumOpeningBalance = calculateOpeningSum(accounts);
+      const sumPeriodChange = calculatePeriodSum(accounts);
+      const sumClosingBalance = calculateSum(accounts);
+
       return (
         <View style={styles.sumRow}>
-          <Text style={[styles.sumLabel, { flex: 2 }]}>Summa</Text>
-          <Text style={styles.sumValue}></Text>{" "}
-          <Text style={styles.sumValue}>{sumClosingBalance.toFixed(2)}</Text>
+          <Text style={[styles.balansTableCol, { flex: 2, fontWeight: 'bold' }]}>Summa</Text>
+          <Text style={[styles.balansTableColRight, { flex: 1 }]}>
+            {sumOpeningBalance.toFixed(2)}
+          </Text>
+          <Text style={[styles.balansTableColRight, { flex: 1 }]}>
+            {sumPeriodChange.toFixed(2)}
+          </Text>
+          <Text style={[styles.balansTableColRight, { flex: 1 }]}>
+            {sumClosingBalance.toFixed(2)}
+          </Text>
         </View>
       );
     };
+
+
+
 
     const renderTable = (sectionTitle: any, accounts: any) => (
       <View style={styles.balansSection}>
@@ -787,13 +811,11 @@ const ReportsPage: React.FC = () => {
               {orgDetails?.number}
             </Text>{" "}
             <Text style={styles.fiscalYearInfo}>
-              Räkenskapsår:{" "}
-              {format(fiscalYearPeriod.start.toDate(), "yyyy-MM-dd")} till
+              Räkenskapsår: {format(fiscalYearPeriod.start.toDate(), "yyyy-MM-dd")} till{' '}
               {format(fiscalYearPeriod.end.toDate(), "yyyy-MM-dd")}
             </Text>
             <Text style={styles.fiscalYearInfo}>
-              Period: {format(fiscalYearPeriod.start.toDate(), "yyyy-MM-dd")}{" "}
-              till
+              Period: {format(fiscalYearPeriod.start.toDate(), "yyyy-MM-dd")} till{' '}
               {format(fiscalYearPeriod.end.toDate(), "yyyy-MM-dd")}
             </Text>
           </View>
@@ -803,7 +825,7 @@ const ReportsPage: React.FC = () => {
             Object.entries(balansData.assets).map(([id, account]: any) => ({
               ...account,
               name: account.name || id,
-              periodChange: account.totalChange,
+              periodChange: account.periodChange,
             }))
           )}
 
@@ -813,7 +835,7 @@ const ReportsPage: React.FC = () => {
               ([id, account]: any) => ({
                 ...account,
                 name: account.name || id, // If account.name is not set, use the account ID
-                periodChange: account.totalChange,
+                periodChange: account.periodChange,
               })
             )
           )}
